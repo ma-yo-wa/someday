@@ -1,8 +1,9 @@
-import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import type { Backend, BackendHandlers, NewActivity } from '../backend';
 import type { Activity, AuditLog } from '../types';
 import { iso } from '../date';
 import type { Config } from '../config';
+import { getClient } from '../auth';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -36,26 +37,34 @@ interface ActivityRow {
   updated_at: string | null;
 }
 
-/* Writes are deliberately not optimistic. The insert goes to Postgres,
-   the trigger writes history, and the realtime event is what updates the
-   UI — so both partners' screens are driven by the same event and the
-   history timeline can never drift from the item it describes. */
+/* Writes are not optimistic: the row must land in Postgres first. We still
+   refresh the list ourselves after each write so the UI doesn't depend on
+   Realtime being subscribed (Realtime remains for the other phone). */
 export class SupabaseBackend implements Backend {
   readonly name = 'supabase' as const;
 
-  private client: SupabaseClient;
+  private client!: SupabaseClient;
   private channel: RealtimeChannel | null = null;
   private handlers!: BackendHandlers;
   private spaceId: string;
   private uid = '';
 
   constructor(private config: Config) {
-    this.client = createClient(config.supabaseUrl, config.supabaseKey);
     this.spaceId = config.spaceId;
   }
 
   async init(handlers: BackendHandlers): Promise<void> {
     this.handlers = handlers;
+
+    if (!this.spaceId) {
+      throw new Error('No space yet — sign out and sign back in.');
+    }
+
+    const client = await getClient(this.config);
+    if (!client) {
+      throw new Error('Supabase isn’t configured');
+    }
+    this.client = client;
 
     const { data: sessionData } = await this.client.auth.getSession();
     const user = sessionData.session?.user;
@@ -110,6 +119,7 @@ export class SupabaseBackend implements Backend {
       all_day: !input.date_time || input.date_time.length <= 10,
     });
     if (error) throw error;
+    await this.refresh();
   }
 
   async patch(id: string, changes: Partial<Activity>): Promise<void> {
@@ -128,11 +138,13 @@ export class SupabaseBackend implements Backend {
     }
     const { error } = await this.client.from('activities').update(patch).eq('id', id);
     if (error) throw error;
+    await this.refresh();
   }
 
   async remove(id: string): Promise<void> {
     const { error } = await this.client.from('activities').delete().eq('id', id);
     if (error) throw error;
+    await this.refresh();
   }
 
   /* ---------------- internals ---------------- */
@@ -147,7 +159,8 @@ export class SupabaseBackend implements Backend {
       .select('*')
       .eq('space_id', this.spaceId)
       .order('created_at', { ascending: false });
-    if (error || !data) return;
+    if (error) throw error;
+    if (!data) return;
 
     const rows = data as ActivityRow[];
     this.handlers.onActivities(

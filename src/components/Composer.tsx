@@ -61,23 +61,29 @@ export default function Composer() {
     const dateTime = isPlan ? (time ? `${date}T${time}` : date) : null;
     // An end that isn't after the start isn't a span, it's a typo.
     const span = isPlan && end && end > date ? (time ? `${end}T${time}` : end) : null;
-    await create({
-      title: clean,
-      description: notes.trim() || null,
-      image_url: cover,
-      date_time: dateTime,
-      ends_at: span,
-    });
-    close();
-    if (isPlan) {
-      setPicked(date);
-      const d = parseISO(date);
-      setCursor(iso(new Date(d.getFullYear(), d.getMonth(), 1)));
-      setScreen('calendar');
-    } else {
-      setScreen('bucket');
+    try {
+      await create({
+        title: clean,
+        description: notes.trim() || null,
+        image_url: cover,
+        date_time: dateTime,
+        ends_at: span,
+      });
+      close();
+      if (isPlan) {
+        setPicked(date);
+        const d = parseISO(date);
+        setCursor(iso(new Date(d.getFullYear(), d.getMonth(), 1)));
+        setScreen('calendar');
+      } else {
+        setScreen('bucket');
+      }
+      toast(isPlan ? 'It’s on the calendar' : 'Added to your bucket list');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not save');
+    } finally {
+      setSaving(false);
     }
-    toast(isPlan ? 'It’s on the calendar' : 'Added to your bucket list');
   }
 
   return (

@@ -241,24 +241,23 @@ export const useApp = create<AppState>()((set, get) => {
     },
 
     async create(input) {
-      try {
-        await backend?.create(input);
-      } catch (err) {
-        get().toast(err instanceof Error ? err.message : 'Could not save');
-      }
+      if (!backend) throw new Error('Not connected — try signing out and back in');
+      await backend.create(input);
     },
 
     async patch(id, changes) {
+      if (!backend) throw new Error('Not connected — try signing out and back in');
       try {
-        await backend?.patch(id, changes);
+        await backend.patch(id, changes);
       } catch (err) {
         get().toast(err instanceof Error ? err.message : 'Could not save');
       }
     },
 
     async remove(id) {
+      if (!backend) throw new Error('Not connected — try signing out and back in');
       try {
-        await backend?.remove(id);
+        await backend.remove(id);
       } catch (err) {
         get().toast(err instanceof Error ? err.message : 'Could not delete');
       }
@@ -318,6 +317,17 @@ export const useApp = create<AppState>()((set, get) => {
 
 /** Name of whichever partner created a row, for history lines. */
 export function partnerName(config: Config, createdBy: string): string {
-  const idx = createdBy === '1' ? 1 : 0;
-  return config.names[idx] || (idx === 0 ? 'Me' : 'You');
+  // Local demo uses "0" / "1"; signed-in mode uses profile UUIDs.
+  if (createdBy === '0' || createdBy === '1') {
+    const idx = createdBy === '1' ? 1 : 0;
+    return config.names[idx] || (idx === 0 ? 'Me' : 'You');
+  }
+  const space = useApp.getState().space;
+  if (space) {
+    if (createdBy === space.myId) return space.myName;
+    if (createdBy === space.partner1Id || createdBy === space.partner2Id) {
+      return space.partnerName ?? config.names[1 - space.me] ?? 'Them';
+    }
+  }
+  return 'Someone';
 }
