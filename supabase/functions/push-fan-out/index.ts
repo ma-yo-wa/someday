@@ -7,8 +7,10 @@
    Crypto — no notification SDK, no vendor sitting between our database
    and the user's push service.
 
-   Invoked by the `notify_partner()` trigger in push.sql with:
-     { recipient_id, space_id, activity_id, kind, title, body }
+   Invoked by the push triggers in push.sql with:
+     { recipient_id, space_id, activity_id?, kind, title, body }
+
+   kind is one of: scheduled | notes | joined
 
    Secrets required (supabase secrets set ...):
      VAPID_PUBLIC_KEY    base64url, uncompressed P-256 point (65 bytes)
@@ -216,8 +218,12 @@ Deno.serve(async (req) => {
   }
 
   let job: {
-    recipient_id: string; space_id: string; activity_id: string;
-    kind: string; title: string; body: string;
+    recipient_id: string;
+    space_id: string;
+    activity_id?: string | null;
+    kind: string;
+    title: string;
+    body: string;
   };
   try {
     job = await req.json();
@@ -225,18 +231,24 @@ Deno.serve(async (req) => {
     return new Response("Bad JSON", { status: 400 });
   }
 
+  if (!job.recipient_id || !job.space_id || !job.title) {
+    return new Response("Missing fields", { status: 400 });
+  }
+
   const subs = await loadSubs(job.recipient_id, job.space_id);
   if (!subs.length) {
     return Response.json({ sent: 0, reason: "no registered devices" });
   }
 
+  const activityId = job.activity_id ?? null;
   const payload = {
     title: job.title,
     body: job.body,
-    tag: `activity-${job.activity_id}`,   // collapses repeats about one item
+    // Collapse repeats: one activity, or one "joined" per space.
+    tag: activityId ? `activity-${activityId}` : `space-${job.kind}-${job.space_id}`,
     kind: job.kind,
-    activityId: job.activity_id,
-    url: `./index.html#a=${job.activity_id}`,
+    activityId,
+    url: activityId ? `/?a=${activityId}` : "/",
   };
 
   const results = await Promise.all(subs.map(async (s) => {

@@ -24,10 +24,10 @@ import f from './Form.module.css';
 const PUSH_COPY: Record<PushState, string> = {
   unsupported: "This browser can't do web push.",
   'ios-install': 'Add Someday to your Home Screen to get notifications.',
-  default: "You'll hear when dates lock in or notes change.",
+  default: 'Hear when she joins, locks in a date, or updates notes.',
   denied: 'Blocked — turn notifications on in Settings.',
   'granted-idle': 'Allowed. Turn the switch on to finish.',
-  on: "You'll hear about locked-in dates and note changes.",
+  on: 'On — joins, locked-in dates, and note changes.',
 };
 
 export default function Settings() {

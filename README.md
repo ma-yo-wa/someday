@@ -61,6 +61,8 @@ demo mode still works for you both to poke at the UI.
    - `schema.sql`
    - `migrations/001_spans_and_invites.sql`
    - `push.sql` (only when you’re ready for notifications)
+   - `migrations/002_partner_joined_push.sql` (if `push.sql` was already
+     applied earlier — adds the “she joined” ping)
 3. **Authentication → Providers → Email**
    - Enable Email
    - Turn **Confirm email** **off** so sign-up works inside the app (no
@@ -117,7 +119,7 @@ Do these when the basic app is live and you both have accounts — not before.
 | Feature | What’s needed |
 |---|---|
 | Giphy covers | Free key from [developers.giphy.com](https://developers.giphy.com/) → Cloudflare env `VITE_GIPHY_API_KEY` → redeploy. (Edge Function path is optional later.) |
-| Web Push | `node vapid-keygen.mjs`, secrets + `push-fan-out` function, fill `private.app_config` in `push.sql` comments, paste public key in Settings (or `VITE_VAPID_PUBLIC_KEY`) |
+| Web Push | `node vapid-keygen.mjs`, secrets + deploy `push-fan-out`, fill `private.app_config` (see `push.sql`), set `VITE_VAPID_PUBLIC_KEY` (or paste in Settings). Home Screen app → Settings → Push on. You’ll get a ping when she joins, locks a date, or updates notes. |
 | Google Calendar | See **Google Calendar setup** below |
 
 ### Google Calendar setup
