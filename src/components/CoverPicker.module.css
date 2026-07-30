@@ -1,6 +1,7 @@
 .wrap {
   margin-top: 8px;
-  padding-bottom: 8px;
+  /* Room so the last GIF/icon row clears Safari’s bar when the sheet scrolls. */
+  padding-bottom: calc(28px + var(--chrome-b));
 }
 
 .preview {
@@ -92,10 +93,6 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-top: 14px;
-  max-height: min(42vh, 320px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 4px;
 }
 
 .iconCell {
@@ -125,9 +122,6 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-top: 14px;
-  max-height: min(42vh, 320px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .gifCell {

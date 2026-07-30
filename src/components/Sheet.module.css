@@ -14,7 +14,7 @@
 .sheet {
   width: 100%;
   max-width: 480px;
-  max-height: 92dvh;
+  max-height: calc(100dvh - var(--safe-t) - 12px);
   display: flex;
   flex-direction: column;
   background: var(--paper-warm);
@@ -22,9 +22,13 @@
   padding: 6px max(20px, var(--safe-l))
     calc(22px + var(--safe-b) + var(--chrome-b)) max(20px, var(--safe-r));
   box-shadow: 0 -1px 0 var(--hairline);
+  /* Keep drag on the sheet chrome; scrolling happens in .scroller. */
+  min-height: 0;
 }
 
 .scroller {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
