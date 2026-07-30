@@ -64,7 +64,7 @@ export interface Partner {
 
 /* One nullable column is still the whole distinction — a bucket-list item
    becomes a plan the moment it gets a date, with nothing to migrate. */
-export const isPlan = (a: Activity): boolean => a.date_time !== null;
-export const isBucketItem = (a: Activity): boolean => a.date_time === null;
+export const isPlan = (a: Activity): boolean => Boolean(a.date_time);
+export const isBucketItem = (a: Activity): boolean => !a.date_time;
 export const isMultiDay = (a: Activity): boolean =>
   a.date_time !== null && a.ends_at !== null && a.ends_at.slice(0, 10) !== a.date_time.slice(0, 10);

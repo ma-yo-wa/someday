@@ -95,11 +95,13 @@ joins with an invite link or code from the empty seat in the nav bar.
    | `VITE_SUPABASE_URL` | your project URL |
    | `VITE_SUPABASE_ANON_KEY` | your anon public key |
 
-5. Deploy. You’ll get a `*.pages.dev` URL (e.g. `someday.pages.dev`).
+5. Deploy. You’ll get a workers URL (e.g.
+   `https://someday-app.writemayowa.workers.dev`).
 
 6. Back in Supabase → **Authentication → URL configuration**:
-   - Site URL = your Pages URL
-   - Redirect URLs = that URL and `http://localhost:5173/**` for local
+   - Site URL = your live workers URL
+   - Redirect URLs = that URL (`https://…workers.dev/**`) and
+     `http://localhost:5173/**` for local
 
 ### 3. Install on iPhone
 

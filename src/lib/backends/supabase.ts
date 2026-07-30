@@ -31,7 +31,7 @@ interface ActivityRow {
   image_url: string | null;
   created_by: string;
   date_time: string | null;
-  ends_at: string | null;
+  ends_at?: string | null;
   all_day: boolean;
   created_at: string;
   updated_at: string | null;
@@ -108,18 +108,55 @@ export class SupabaseBackend implements Backend {
   }
 
   async create(input: NewActivity): Promise<void> {
-    const { error } = await this.client.from('activities').insert({
+    // Re-check auth right before write — a stale client can "succeed" with
+    // zero rows under RLS when the JWT isn't actually attached.
+    const { data: userData, error: userErr } = await this.client.auth.getUser();
+    if (userErr || !userData.user) {
+      throw new Error('Session expired — sign out and sign back in.');
+    }
+    this.uid = userData.user.id;
+
+    if (!this.spaceId) {
+      throw new Error('No space yet — sign out and sign back in.');
+    }
+
+    const row: Record<string, unknown> = {
       space_id: this.spaceId,
       title: input.title,
       description: input.description || null,
       image_url: input.image_url || null,
       created_by: this.uid,
       date_time: input.date_time ? toTimestamptz(input.date_time) : null,
-      ends_at: input.ends_at ? toTimestamptz(input.ends_at) : null,
       all_day: !input.date_time || input.date_time.length <= 10,
-    });
-    if (error) throw error;
-    await this.refresh();
+    };
+    // Only send ends_at when set — older DBs without the column still work,
+    // and null spans don't need the field.
+    if (input.ends_at) row.ends_at = toTimestamptz(input.ends_at);
+
+    const { data, error } = await this.client
+      .from('activities')
+      .insert(row)
+      .select('*')
+      .single();
+
+    if (error) {
+      const detail = [error.message, error.details, error.hint]
+        .filter(Boolean)
+        .join(' — ');
+      throw new Error(detail || 'Could not save');
+    }
+    if (!data) {
+      throw new Error(
+        'Save was blocked (no row returned). In Supabase, confirm schema.sql + migrations ran and you’re a member of the space.',
+      );
+    }
+
+    // Show the new row immediately, then reconcile with a full refresh.
+    this.handlers.onActivities([
+      mapActivity(data as ActivityRow),
+      ...(await this.fetchActivities()).filter((a) => a.id !== data.id),
+    ]);
+    void this.refreshLogs();
   }
 
   async patch(id: string, changes: Partial<Activity>): Promise<void> {
@@ -153,31 +190,18 @@ export class SupabaseBackend implements Backend {
     await Promise.all([this.refreshActivities(), this.refreshLogs()]);
   }
 
-  private async refreshActivities(): Promise<void> {
+  private async fetchActivities(): Promise<Activity[]> {
     const { data, error } = await this.client
       .from('activities')
       .select('*')
       .eq('space_id', this.spaceId)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    if (!data) return;
+    return ((data ?? []) as ActivityRow[]).map(mapActivity);
+  }
 
-    const rows = data as ActivityRow[];
-    this.handlers.onActivities(
-      rows.map<Activity>((r) => ({
-        id: r.id,
-        space_id: r.space_id,
-        title: r.title,
-        description: r.description,
-        image_url: r.image_url,
-        created_by: r.created_by,
-        date_time: fromTimestamptz(r.date_time, r.all_day),
-        ends_at: fromTimestamptz(r.ends_at, r.all_day),
-        all_day: r.all_day,
-        created_at: r.created_at,
-        updated_at: r.updated_at ?? undefined,
-      })),
-    );
+  private async refreshActivities(): Promise<void> {
+    this.handlers.onActivities(await this.fetchActivities());
   }
 
   private async refreshLogs(): Promise<void> {
@@ -199,4 +223,20 @@ export class SupabaseBackend implements Backend {
   get configRef(): Config {
     return this.config;
   }
+}
+
+function mapActivity(r: ActivityRow): Activity {
+  return {
+    id: r.id,
+    space_id: r.space_id,
+    title: r.title,
+    description: r.description,
+    image_url: r.image_url,
+    created_by: r.created_by,
+    date_time: fromTimestamptz(r.date_time, r.all_day),
+    ends_at: fromTimestamptz(r.ends_at ?? null, r.all_day),
+    all_day: r.all_day,
+    created_at: r.created_at,
+    updated_at: r.updated_at ?? undefined,
+  };
 }
