@@ -124,7 +124,7 @@ Do these when the basic app is live and you both have accounts — not before.
 
 ```
 src/                 React app (screens, components, store, backends)
-public/              Icons, splash screens, _redirects for Pages
+public/              Icons, splash screens
 supabase/functions/  giphy, push-fan-out
 schema.sql           Core tables, RLS, realtime
 migrations/          Spans, invite peek/join heal, policy fixes
