@@ -16,6 +16,12 @@ const API_KEY =
 
 const LIMIT = 15;
 
+/** Only hit the Edge Function when explicitly enabled — an undeployed
+ *  function 404s the CORS preflight and the browser never lets us fall
+ *  back on status codes. */
+const USE_FUNCTION =
+  (import.meta.env.VITE_GIPHY_USE_FUNCTION as string | undefined) === '1';
+
 export async function fetchGifs(
   action: 'trending' | 'search',
   q = '',
@@ -23,14 +29,14 @@ export async function fetchGifs(
 ): Promise<GifItem[]> {
   const conf = loadConfig();
 
-  // Prefer the Edge Function when Supabase is wired — key stays server-side.
-  if (conf.supabaseUrl && conf.supabaseKey) {
+  if (USE_FUNCTION && conf.supabaseUrl && conf.supabaseKey) {
     try {
       return await fetchViaFunction(conf.supabaseUrl, conf.supabaseKey, action, q, signal);
     } catch (err) {
+      if ((err as Error).name === 'AbortError') throw err;
       const kind = (err as { kind?: string }).kind;
-      // Function missing / not configured → fall back so covers still work.
-      if (kind !== 'cfg' && kind !== 'http' && kind !== 'missing') throw err;
+      if (kind === 'rate') throw err;
+      // Function missing, CORS preflight 404, misconfigured → public API.
     }
   }
 
