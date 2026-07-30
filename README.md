@@ -116,7 +116,7 @@ Do these when the basic app is live and you both have accounts — not before.
 
 | Feature | What’s needed |
 |---|---|
-| Giphy covers | `supabase secrets set GIPHY_API_KEY=…` then `supabase functions deploy giphy` |
+| Giphy covers | Works out of the box via Giphy’s public beta key. Optional: your own key as `VITE_GIPHY_API_KEY`, or `supabase secrets set GIPHY_API_KEY=…` + `supabase functions deploy giphy` |
 | Web Push | `node vapid-keygen.mjs`, secrets + `push-fan-out` function, fill `private.app_config` in `push.sql` comments, paste public key in Settings (or `VITE_VAPID_PUBLIC_KEY`) |
 | Google Calendar | Google Cloud OAuth client (Web), add Pages origin, paste client ID / set `VITE_GOOGLE_CLIENT_ID` |
 
