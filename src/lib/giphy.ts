@@ -7,18 +7,11 @@ export interface GifItem {
   full: string;
 }
 
-/* Giphy’s public beta key (from their docs). Fine for a private two-person
-   app. Prefer VITE_GIPHY_API_KEY, or the Edge Function + GIPHY_API_KEY
-   secret, when you want your own quota. */
-const API_KEY =
-  (import.meta.env.VITE_GIPHY_API_KEY as string | undefined)?.trim() ||
-  'sXpGFDGZs0Dv1mmNFvYaGUvYwKX52TU3';
+const API_KEY = (import.meta.env.VITE_GIPHY_API_KEY as string | undefined)?.trim() ?? '';
 
 const LIMIT = 15;
 
-/** Only hit the Edge Function when explicitly enabled — an undeployed
- *  function 404s the CORS preflight and the browser never lets us fall
- *  back on status codes. */
+/** Only hit the Edge Function when explicitly enabled. */
 const USE_FUNCTION =
   (import.meta.env.VITE_GIPHY_USE_FUNCTION as string | undefined) === '1';
 
@@ -36,8 +29,11 @@ export async function fetchGifs(
       if ((err as Error).name === 'AbortError') throw err;
       const kind = (err as { kind?: string }).kind;
       if (kind === 'rate') throw err;
-      // Function missing, CORS preflight 404, misconfigured → public API.
     }
+  }
+
+  if (!API_KEY) {
+    throw Object.assign(new Error('cfg'), { kind: 'cfg' });
   }
 
   return fetchDirect(action, q, signal);
@@ -86,6 +82,9 @@ async function fetchDirect(
 
   const res = await fetch(u.toString(), { signal });
   if (res.status === 429) throw Object.assign(new Error('rate'), { kind: 'rate' });
+  if (res.status === 401 || res.status === 403) {
+    throw Object.assign(new Error('cfg'), { kind: 'cfg' });
+  }
   if (!res.ok) throw Object.assign(new Error('http'), { kind: 'http' });
 
   const body = (await res.json()) as {

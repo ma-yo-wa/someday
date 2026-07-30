@@ -37,7 +37,7 @@ export default function GiphyPicker({ value, onChange, titleHint }: Props) {
       setMsg(
         {
           rate: "Giphy's rate limit is hit. Give it a minute.",
-          cfg: "GIPHY_API_KEY isn't set on the server yet.",
+          cfg: 'Add VITE_GIPHY_API_KEY in Cloudflare (free key from developers.giphy.com), then redeploy.',
           http: 'Giphy returned an error.',
         }[kind ?? ''] ?? "Couldn't reach Giphy.",
       );

@@ -116,7 +116,7 @@ Do these when the basic app is live and you both have accounts — not before.
 
 | Feature | What’s needed |
 |---|---|
-| Giphy covers | Works out of the box via Giphy’s public beta key (no Edge Function needed). Optional later: your own `VITE_GIPHY_API_KEY`, or deploy `giphy` + set `GIPHY_API_KEY` and `VITE_GIPHY_USE_FUNCTION=1` |
+| Giphy covers | Free key from [developers.giphy.com](https://developers.giphy.com/) → Cloudflare env `VITE_GIPHY_API_KEY` → redeploy. (Edge Function path is optional later.) |
 | Web Push | `node vapid-keygen.mjs`, secrets + `push-fan-out` function, fill `private.app_config` in `push.sql` comments, paste public key in Settings (or `VITE_VAPID_PUBLIC_KEY`) |
 | Google Calendar | Google Cloud OAuth client (Web), add Pages origin, paste client ID / set `VITE_GOOGLE_CLIENT_ID` |
 
