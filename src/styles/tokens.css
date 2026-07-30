@@ -72,6 +72,21 @@
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
 
+  /* Safari/Chrome’s floating bottom bar is NOT in safe-area-inset — it
+     overlays the page. Lift fixed chrome by this much in the browser;
+     installed PWAs (standalone) don’t need it. */
+  --chrome-b: 56px;
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  :root {
+    --chrome-b: 0px;
+  }
+}
+
+/* Keep tokens.css valid — reopen :root for the rest of the file. */
+:root {
+
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* UIKit's default animation curve. Anything that moves in response to
      a touch should use this one, so motion here matches motion in the

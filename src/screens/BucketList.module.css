@@ -2,7 +2,8 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
-  padding: 8px max(20px, var(--safe-l)) calc(var(--safe-b) + 116px)
+  padding: 8px max(20px, var(--safe-l))
+    calc(var(--safe-b) + var(--chrome-b) + 116px)
     max(20px, var(--safe-r));
 }
 
