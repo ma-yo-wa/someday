@@ -92,6 +92,25 @@ export async function signOut(): Promise<void> {
   await sb.auth.signOut();
 }
 
+/** If signup ran before the “auto-create space” migration, make one now. */
+export async function ensureSpace(): Promise<SpaceInfo | null> {
+  const existing = await loadSpace();
+  if (existing) return existing;
+
+  const sb = await getClient();
+  if (!sb) return null;
+  const { data: sess } = await sb.auth.getSession();
+  const uid = sess.session?.user?.id;
+  if (!uid) return null;
+
+  const { error } = await sb.from('spaces').insert({
+    partner_1_id: uid,
+    name: 'Someday',
+  });
+  if (error) throw error;
+  return loadSpace();
+}
+
 export async function loadSpace(): Promise<SpaceInfo | null> {
   const sb = await getClient();
   if (!sb) return null;
@@ -152,7 +171,14 @@ export async function updateDisplayName(name: string): Promise<void> {
   const { data: sess } = await sb.auth.getSession();
   const uid = sess.session?.user?.id;
   if (!uid) return;
-  await sb.from('profiles').update({ display_name: name.trim() }).eq('id', uid);
+  const clean = name.trim();
+  if (!clean) return;
+  await sb.from('profiles').update({ display_name: clean }).eq('id', uid);
+
+  const config = loadConfig();
+  const names: [string, string] = [...config.names];
+  names[config.me] = clean;
+  saveConfig({ ...config, names });
 }
 
 export async function peekInvite(code: string): Promise<InvitePeek | null> {

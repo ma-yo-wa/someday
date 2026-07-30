@@ -36,7 +36,17 @@ export default function NavBar() {
 
   const cursorDate = parseISO(cursor);
   const isCalendar = screen === 'calendar';
+  // Two seats = you + partner. Until they join, the open seat is "+"
+  // (invite) — not a fake "You" avatar from the old demo defaults.
   const seatEmpty = !!space && !space.partner2Id;
+  const me = space?.me ?? config.me;
+  const labelFor = (i: 0 | 1) => {
+    if (space) {
+      if (i === space.me) return space.myName;
+      return space.partnerName ?? '';
+    }
+    return config.names[i] ?? '';
+  };
 
   const monthLabel = `${MONTHS[cursorDate.getMonth()]}${
     cursorDate.getFullYear() === new Date().getFullYear()
@@ -83,16 +93,17 @@ export default function NavBar() {
             aria-label={seatEmpty ? 'Invite someone' : 'Settings'}
           >
             {([0, 1] as const).map((i) => {
-              const empty = seatEmpty && i !== config.me;
+              const empty = seatEmpty && i !== me;
+              const label = labelFor(i);
               return (
                 <span
                   key={i}
                   className={`${s.face} ${empty ? s.empty : ''} ${
-                    !empty && config.me !== i ? s.dim : ''
+                    !empty && me !== i ? s.dim : ''
                   }`}
                   style={empty ? undefined : { background: faceColor(i) }}
                 >
-                  {empty ? '+' : (config.names[i]?.[0] ?? '?').toUpperCase()}
+                  {empty ? '+' : (label[0] ?? '?').toUpperCase()}
                 </span>
               );
             })}

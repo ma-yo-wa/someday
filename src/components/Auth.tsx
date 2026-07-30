@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { signInWithPassword, signUpWithPassword } from '../lib/auth';
 import f from './Form.module.css';
 import s from './Auth.module.css';
@@ -48,7 +49,7 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
           : 'A shared calendar and bucket list for two.'}
       </p>
 
-      <div className={f.segmented} role="tablist" aria-label="Account">
+      <div className={`${f.segmented} ${s.modes}`} role="tablist" aria-label="Account">
         <button
           type="button"
           role="tab"
@@ -59,6 +60,13 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
             setError(null);
           }}
         >
+          {mode === 'signin' && (
+            <motion.span
+              layoutId="auth-mode-knob"
+              className={f.segmentKnob}
+              transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+            />
+          )}
           <span className={f.segmentLabel}>Sign in</span>
         </button>
         <button
@@ -71,6 +79,13 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
             setError(null);
           }}
         >
+          {mode === 'signup' && (
+            <motion.span
+              layoutId="auth-mode-knob"
+              className={f.segmentKnob}
+              transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+            />
+          )}
           <span className={f.segmentLabel}>Create account</span>
         </button>
       </div>

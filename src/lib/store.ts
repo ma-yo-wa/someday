@@ -6,7 +6,7 @@ import { loadConfig, saveConfig, isSupabaseConfigured, type Config } from './con
 import {
   authConfigured,
   currentSession,
-  loadSpace,
+  ensureSpace,
   pendingInvite,
   signOut,
   type SpaceInfo,
@@ -162,7 +162,7 @@ export const useApp = create<AppState>()((set, get) => {
             set({ authPhase: 'signedOut', ready: true });
             return;
           }
-          const space = await loadSpace();
+          const space = await ensureSpace();
           set({ space, config: loadConfig(), authPhase: 'signedIn' });
           if (space) {
             await start(await supabaseBackend({ ...loadConfig(), spaceId: space.id }));
@@ -192,7 +192,7 @@ export const useApp = create<AppState>()((set, get) => {
     },
 
     async refreshSpace() {
-      const space = await loadSpace();
+      const space = await ensureSpace();
       set({ space, config: loadConfig(), authPhase: 'signedIn' });
       if (space) {
         await start(await supabaseBackend({ ...loadConfig(), spaceId: space.id }));

@@ -18,7 +18,11 @@
   letter-spacing: var(--tr-body);
   color: var(--ink-soft);
   max-width: 28ch;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
+}
+
+.modes {
+  margin-bottom: 8px;
 }
 
 .note {
