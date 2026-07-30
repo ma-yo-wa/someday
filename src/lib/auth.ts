@@ -69,12 +69,20 @@ export async function signInWithPassword(
 export async function signUpWithPassword(
   email: string,
   password: string,
+  displayName: string,
 ): Promise<void> {
   const sb = await getClient();
   if (!sb) throw new Error('Supabase isn’t configured');
+  const name = displayName.trim();
+  if (!name) throw new Error('Add a name — it shows on your avatar');
+
   const { data, error } = await sb.auth.signUp({
     email: email.trim().toLowerCase(),
     password,
+    options: {
+      // handle_new_user reads this into profiles.display_name (avatar letter).
+      data: { display_name: name },
+    },
   });
   if (error) throw error;
   // With “Confirm email” on, Supabase creates the user but returns no session
@@ -83,6 +91,11 @@ export async function signUpWithPassword(
     throw new Error(
       'Account created, but email confirmation is still on in Supabase. Turn off Authentication → Providers → Email → Confirm email, then sign in.',
     );
+  }
+
+  // Belt-and-suspenders if the trigger used a stale default.
+  if (data.user) {
+    await sb.from('profiles').update({ display_name: name }).eq('id', data.user.id);
   }
 }
 

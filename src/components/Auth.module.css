@@ -25,6 +25,13 @@
   margin-bottom: 8px;
 }
 
+.fieldHint {
+  margin: 8px 4px 0;
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  color: var(--ink-faint);
+}
+
 .note {
   margin-top: 14px;
   font: var(--t-footnote);

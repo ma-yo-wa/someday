@@ -85,9 +85,13 @@ export default function Settings() {
                   }
                 })();
               }}
-              placeholder="Your name"
+              placeholder="Mayowa"
             />
           </div>
+          <p className={f.rowNote}>
+            First letter is your avatar
+            {myName.trim() ? ` (now “${myName.trim()[0]!.toUpperCase()}”)` : ''}.
+          </p>
 
           <span className={f.label}>Partner</span>
           <div className={f.group}>

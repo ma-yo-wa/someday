@@ -12,6 +12,7 @@ interface Props {
 
 export default function Auth({ onSignedIn, inviterHint }: Props) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -23,6 +24,10 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
       setError('That doesn’t look like an email');
       return;
     }
+    if (mode === 'signup' && !name.trim()) {
+      setError('Add your name — it shows on your avatar');
+      return;
+    }
     if (password.length < 6) {
       setError('Password needs at least 6 characters');
       return;
@@ -30,7 +35,7 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
     setBusy(true);
     setError(null);
     try {
-      if (mode === 'signup') await signUpWithPassword(clean, password);
+      if (mode === 'signup') await signUpWithPassword(clean, password, name);
       else await signInWithPassword(clean, password);
       onSignedIn();
     } catch (err) {
@@ -89,6 +94,24 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
           <span className={f.segmentLabel}>Create account</span>
         </button>
       </div>
+
+      {mode === 'signup' && (
+        <>
+          <span className={f.label}>Your name</span>
+          <div className={f.group}>
+            <input
+              className={f.input}
+              type="text"
+              autoComplete="name"
+              autoCapitalize="words"
+              placeholder="Mayowa"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <p className={s.fieldHint}>First letter becomes your avatar.</p>
+        </>
+      )}
 
       <span className={f.label}>Email</span>
       <div className={f.group}>
