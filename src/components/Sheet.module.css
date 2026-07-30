@@ -20,7 +20,7 @@
   background: var(--paper-warm);
   border-radius: var(--r-sheet) var(--r-sheet) 0 0;
   padding: 6px max(20px, var(--safe-l))
-    calc(22px + var(--safe-b) + var(--chrome-b)) max(20px, var(--safe-r));
+    calc(22px + var(--safe-b)) max(20px, var(--safe-r));
   box-shadow: 0 -1px 0 var(--hairline);
   /* Keep drag on the sheet chrome; scrolling happens in .scroller. */
   min-height: 0;

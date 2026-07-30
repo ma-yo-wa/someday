@@ -72,21 +72,6 @@
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
 
-  /* Extra lift for browser UI that overlays the layout viewport (Safari’s
-     bottom bar). Default 0 — main.tsx measures the real overlap via the
-     visual viewport. A hard-coded 56px sat the dock too high on current iOS. */
-  --chrome-b: 0px;
-}
-
-@media (display-mode: standalone), (display-mode: fullscreen) {
-  :root {
-    --chrome-b: 0px;
-  }
-}
-
-/* Keep tokens.css valid — reopen :root for the rest of the file. */
-:root {
-
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* UIKit's default animation curve. Anything that moves in response to
      a touch should use this one, so motion here matches motion in the

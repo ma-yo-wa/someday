@@ -1,7 +1,6 @@
 .wrap {
   margin-top: 8px;
-  /* Room so the last GIF/icon row clears Safari’s bar when the sheet scrolls. */
-  padding-bottom: calc(28px + var(--chrome-b));
+  padding-bottom: 28px;
 }
 
 .preview {
