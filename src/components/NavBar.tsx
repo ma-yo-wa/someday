@@ -31,7 +31,6 @@ export default function NavBar() {
   const setCursor = useApp((st) => st.setCursor);
   const setPicked = useApp((st) => st.setPicked);
   const setSettingsOpen = useApp((st) => st.setSettingsOpen);
-  const setInviteShareOpen = useApp((st) => st.setInviteShareOpen);
   const space = useApp((st) => st.space);
 
   const cursorDate = parseISO(cursor);
@@ -85,12 +84,8 @@ export default function NavBar() {
           <button
             type="button"
             className={s.who}
-            onClick={() => {
-              // The empty seat is the invite — tapping it is how you fill it.
-              if (seatEmpty) setInviteShareOpen(true);
-              else setSettingsOpen(true);
-            }}
-            aria-label={seatEmpty ? 'Invite someone' : 'Settings'}
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
           >
             {([0, 1] as const).map((i) => {
               const empty = seatEmpty && i !== me;
