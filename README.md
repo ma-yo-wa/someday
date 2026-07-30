@@ -82,8 +82,11 @@ joins with an invite link or code from the empty seat in the nav bar.
    |---|---|
    | Framework preset | Vite |
    | Build command | `npm run build` |
-   | Build output directory | `dist` |
+   | Deploy command | `npx wrangler deploy` *(default — leave it)* |
    | Root directory | `/` (repo root) |
+
+   `wrangler.toml` tells Wrangler to upload `dist` as a static SPA (no Worker
+   script). You do **not** leave Deploy command blank in the current dashboard.
 
 4. **Settings → Environment variables** (Production):
 
@@ -127,7 +130,7 @@ schema.sql           Core tables, RLS, realtime
 migrations/          Spans, invite peek/join heal, policy fixes
 push.sql             Push subscriptions + fan-out trigger
 legacy/              Previous single-file app (reference only)
-wrangler.toml        Cloudflare Pages build notes
+wrangler.toml        Cloudflare static-asset deploy (dist → SPA)
 ```
 
 ---
