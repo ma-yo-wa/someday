@@ -72,34 +72,6 @@
   color: rgba(255, 253, 251, 0.74);
 }
 
-.sched {
-  position: absolute;
-  top: 11px;
-  right: 11px;
-  z-index: 3;
-  border: none;
-  cursor: pointer;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 253, 251, 0.92);
-  color: #17140f;
-  -webkit-backdrop-filter: var(--mat-thin);
-  backdrop-filter: var(--mat-thin);
-  transition: transform 0.14s var(--ease-ios);
-}
-
-.sched:active {
-  transform: scale(0.88);
-}
-
-.sched svg {
-  width: 15px;
-  height: 15px;
-}
-
 /* Empty states say what goes here and offer the action, rather than
    drawing a dashed box around the absence of one. */
 .blank {

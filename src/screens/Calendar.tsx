@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import CoverArt from '../components/CoverArt';
 import { useApp, partnerName } from '../lib/store';
 import { isPlan, type ExternalEvent } from '../lib/types';
 import { artFor } from '../lib/art';
@@ -10,6 +11,7 @@ import {
   monthGrid,
   parseISO,
   prettyLower,
+  relativeDay,
   spanDays,
   todayISO,
 } from '../lib/date';
@@ -195,37 +197,44 @@ export default function Calendar() {
           </div>
         ) : (
           <>
-            {dayPlans.map((a, i) => (
-              <motion.button
-                key={a.id}
-                type="button"
-                className={s.entry}
-                onClick={() => openDetail(a.id)}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.4 }}
-              >
-                <span className={s.glyph} aria-hidden>
-                  {artFor(a.title)}
-                </span>
-                <span>
-                  <span className={s.title}>{a.title}</span>
-                  <div className={s.range}>
-                    {dtTime(a.date_time) ? prettyLower(dtTime(a.date_time) as string) : 'All day'}
-                  </div>
-                  {a.description && <div className={s.note}>{a.description}</div>}
-                  <div className={s.meta}>
-                    <span
-                      className={s.avatar}
-                      style={{ background: faceColor(a.created_by === '1' ? 1 : 0) }}
-                    >
-                      {(partnerName(config, a.created_by)[0] ?? '?').toUpperCase()}
+            {dayPlans.map((a, i) => {
+              const when = relativeDay(dtDate(a.date_time) ?? picked);
+              const time = dtTime(a.date_time);
+              const timing = time ? `${when} · ${prettyLower(time)}` : `${when} · All day`;
+              return (
+                <motion.button
+                  key={a.id}
+                  type="button"
+                  className={s.entry}
+                  onClick={() => openDetail(a.id)}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.4 }}
+                >
+                  {a.image_url ? (
+                    <CoverArt url={a.image_url} size="thumb" className={s.thumb} />
+                  ) : (
+                    <span className={s.glyph} aria-hidden>
+                      {artFor(a.title)}
                     </span>
-                    Ours
-                  </div>
-                </span>
-              </motion.button>
-            ))}
+                  )}
+                  <span>
+                    <span className={s.title}>{a.title}</span>
+                    <div className={s.range}>{timing}</div>
+                    {a.description && <div className={s.note}>{a.description}</div>}
+                    <div className={s.meta}>
+                      <span
+                        className={s.avatar}
+                        style={{ background: faceColor(config.me) }}
+                      >
+                        {(partnerName(config, a.created_by)[0] ?? '?').toUpperCase()}
+                      </span>
+                      {partnerName(config, a.created_by)}
+                    </div>
+                  </span>
+                </motion.button>
+              );
+            })}
           </>
         )}
       </div>

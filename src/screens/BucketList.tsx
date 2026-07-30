@@ -5,15 +5,6 @@ import { isBucketItem } from '../lib/types';
 import { tintsFor } from '../lib/tint';
 import s from './BucketList.module.css';
 
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export default function BucketList() {
   const activities = useApp((st) => st.activities);
   const config = useApp((st) => st.config);
@@ -55,19 +46,6 @@ export default function BucketList() {
         >
           {a.image_url && <CoverArt url={a.image_url} size="card" className={s.art} />}
           <div className={s.veil} />
-
-          <span
-            className={s.sched}
-            role="button"
-            tabIndex={-1}
-            aria-hidden
-            onClick={(e) => {
-              e.stopPropagation();
-              openDetail(a.id);
-            }}
-          >
-            <ClockIcon />
-          </span>
 
           <div className={s.body}>
             <h3 className={s.title}>{a.title}</h3>

@@ -125,6 +125,24 @@ export function describePlan(
   return time ? `${long(start)} at ${pretty(time)}` : `${long(start)}, all day`;
 }
 
+/** Anticipation copy for a plan’s date: Today, Tomorrow, In 2 days… */
+export function relativeDay(dateISO: string, from = todayISO()): string {
+  const start = parseISO(from.slice(0, 10));
+  const target = parseISO(dateISO.slice(0, 10));
+  const days = Math.round((+target - +start) / 86400000);
+
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  if (days === -1) return 'Yesterday';
+  if (days > 1 && days < 14) return `In ${days} days`;
+  if (days >= 14 && days < 60) {
+    const weeks = Math.round(days / 7);
+    return weeks <= 1 ? `In ${days} days` : `In ${weeks} weeks`;
+  }
+  if (days < -1 && days > -14) return `${Math.abs(days)} days ago`;
+  return shortDate(dateISO);
+}
+
 /** "3 minutes ago", "yesterday", "12 Mar" — precise while it's fresh and
  *  vague once it stops mattering, which is how people talk about time. */
 export function timeAgo(stamp: string): string {

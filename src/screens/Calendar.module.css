@@ -253,6 +253,13 @@
   border-top: var(--hairline-w) solid var(--separator);
 }
 
+.thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .glyph {
   font-size: 27px;
   line-height: 1.1;
