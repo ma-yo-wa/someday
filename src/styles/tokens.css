@@ -72,10 +72,10 @@
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
 
-  /* Safari/Chrome’s floating bottom bar is NOT in safe-area-inset — it
-     overlays the page. Lift fixed chrome by this much in the browser;
-     installed PWAs (standalone) don’t need it. */
-  --chrome-b: 56px;
+  /* Extra lift for browser UI that overlays the layout viewport (Safari’s
+     bottom bar). Default 0 — main.tsx measures the real overlap via the
+     visual viewport. A hard-coded 56px sat the dock too high on current iOS. */
+  --chrome-b: 0px;
 }
 
 @media (display-mode: standalone), (display-mode: fullscreen) {

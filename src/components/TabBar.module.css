@@ -9,7 +9,7 @@
   max-width: 480px;
   margin: 0 auto;
   padding: 0 max(16px, var(--safe-l))
-    calc(12px + var(--safe-b) + var(--chrome-b)) max(16px, var(--safe-r));
+    calc(8px + var(--safe-b) + var(--chrome-b)) max(16px, var(--safe-r));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,7 +81,7 @@
   pointer-events: auto;
   position: absolute;
   right: max(16px, var(--safe-r));
-  bottom: calc(12px + var(--safe-b) + var(--chrome-b) + 64px);
+  bottom: calc(8px + var(--safe-b) + var(--chrome-b) + 64px);
   width: 56px;
   height: 56px;
   border-radius: 50%;
