@@ -19,7 +19,7 @@ plans. Create always asks which of the two you’re making; nothing is inferred.
 | Layer | What |
 |---|---|
 | Frontend | React + Vite + TypeScript, installable PWA |
-| Backend | Supabase (Auth OTP, Postgres, Realtime, Edge Functions) |
+| Backend | Supabase (Auth email/password, Postgres, Realtime, Edge Functions) |
 | Hosting | Cloudflare Pages (free) + Supabase free tier |
 
 The old single-file `legacy/index.html` is kept for reference only. The app
@@ -63,8 +63,8 @@ demo mode still works for you both to poke at the UI.
    - `push.sql` (only when you’re ready for notifications)
 3. **Authentication → Providers → Email**
    - Enable Email
-   - Prefer **OTP / magic code** (six-digit). Turn off “Confirm email” link-only
-     flows if you want the in-app code path only.
+   - Turn **Confirm email** **off** so sign-up works inside the app (no
+     confirmation link).
 4. Copy **Project URL** and the **anon public** key  
    (Settings → API).
 

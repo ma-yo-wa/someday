@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { sendCode, verifyCode } from '../lib/auth';
+import { signInWithPassword, signUpWithPassword } from '../lib/auth';
 import f from './Form.module.css';
 import s from './Auth.module.css';
 
@@ -10,42 +10,30 @@ interface Props {
 }
 
 export default function Auth({ onSignedIn, inviterHint }: Props) {
-  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function requestCode() {
+  async function submit() {
     const clean = email.trim();
     if (!clean || !clean.includes('@')) {
       setError('That doesn’t look like an email');
       return;
     }
-    setBusy(true);
-    setError(null);
-    try {
-      await sendCode(clean);
-      setStep('code');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Couldn’t send a code');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function confirm() {
-    if (code.trim().length < 6) {
-      setError('Enter the six-digit code');
+    if (password.length < 6) {
+      setError('Password needs at least 6 characters');
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      await verifyCode(email, code);
+      if (mode === 'signup') await signUpWithPassword(clean, password);
+      else await signInWithPassword(clean, password);
       onSignedIn();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'That code didn’t work');
+      setError(err instanceof Error ? err.message : 'Couldn’t sign in');
     } finally {
       setBusy(false);
     }
@@ -60,79 +48,81 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
           : 'A shared calendar and bucket list for two.'}
       </p>
 
-      {step === 'email' ? (
-        <>
-          <span className={f.label}>Your email</span>
-          <div className={f.group}>
-            <input
-              className={f.input}
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              spellCheck={false}
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void requestCode();
-              }}
-            />
-          </div>
-          <div className={f.row}>
-            <button
-              type="button"
-              className={`${f.btn} ${f.accent}`}
-              disabled={busy}
-              onClick={() => void requestCode()}
-            >
-              {busy ? 'Sending…' : 'Send a code'}
-            </button>
-          </div>
-          <p className={s.note}>
-            No password. We’ll email you a six-digit code that stays inside
-            the app.
-          </p>
-        </>
-      ) : (
-        <>
-          <span className={f.label}>Code sent to {email}</span>
-          <div className={f.group}>
-            <input
-              className={f.input}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="123456"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void confirm();
-              }}
-            />
-          </div>
-          <div className={f.row}>
-            <button
-              type="button"
-              className={`${f.btn} ${f.accent}`}
-              disabled={busy}
-              onClick={() => void confirm()}
-            >
-              {busy ? 'Checking…' : 'Continue'}
-            </button>
-          </div>
-          <button
-            type="button"
-            className={s.back}
-            onClick={() => {
-              setStep('email');
-              setCode('');
-              setError(null);
-            }}
-          >
-            Use a different email
-          </button>
-        </>
-      )}
+      <div className={f.segmented} role="tablist" aria-label="Account">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'signin'}
+          className={`${f.segment} ${mode === 'signin' ? f.segmentOn : ''}`}
+          onClick={() => {
+            setMode('signin');
+            setError(null);
+          }}
+        >
+          <span className={f.segmentLabel}>Sign in</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'signup'}
+          className={`${f.segment} ${mode === 'signup' ? f.segmentOn : ''}`}
+          onClick={() => {
+            setMode('signup');
+            setError(null);
+          }}
+        >
+          <span className={f.segmentLabel}>Create account</span>
+        </button>
+      </div>
+
+      <span className={f.label}>Email</span>
+      <div className={f.group}>
+        <input
+          className={f.input}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
+
+      <span className={f.label}>Password</span>
+      <div className={f.group}>
+        <input
+          className={f.input}
+          type="password"
+          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void submit();
+          }}
+        />
+      </div>
+
+      <div className={f.row}>
+        <button
+          type="button"
+          className={`${f.btn} ${f.accent}`}
+          disabled={busy}
+          onClick={() => void submit()}
+        >
+          {busy
+            ? '…'
+            : mode === 'signup'
+              ? 'Create account'
+              : 'Sign in'}
+        </button>
+      </div>
+
+      <p className={s.note}>
+        Stays in the app — no email codes, no browser bounce.
+      </p>
 
       {error && <p className={s.error}>{error}</p>}
     </div>

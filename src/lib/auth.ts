@@ -53,25 +53,37 @@ export async function currentSession() {
   return data.session;
 }
 
-export async function sendCode(email: string): Promise<void> {
+export async function signInWithPassword(
+  email: string,
+  password: string,
+): Promise<void> {
   const sb = await getClient();
   if (!sb) throw new Error('Supabase isn’t configured');
-  const { error } = await sb.auth.signInWithOtp({
+  const { error } = await sb.auth.signInWithPassword({
     email: email.trim().toLowerCase(),
-    options: { shouldCreateUser: true },
+    password,
   });
   if (error) throw error;
 }
 
-export async function verifyCode(email: string, token: string): Promise<void> {
+export async function signUpWithPassword(
+  email: string,
+  password: string,
+): Promise<void> {
   const sb = await getClient();
   if (!sb) throw new Error('Supabase isn’t configured');
-  const { error } = await sb.auth.verifyOtp({
+  const { data, error } = await sb.auth.signUp({
     email: email.trim().toLowerCase(),
-    token: token.trim(),
-    type: 'email',
+    password,
   });
   if (error) throw error;
+  // With “Confirm email” on, Supabase creates the user but returns no session
+  // until they click a link — which breaks the in-app / PWA flow.
+  if (!data.session) {
+    throw new Error(
+      'Account created, but email confirmation is still on in Supabase. Turn off Authentication → Providers → Email → Confirm email, then sign in.',
+    );
+  }
 }
 
 export async function signOut(): Promise<void> {
