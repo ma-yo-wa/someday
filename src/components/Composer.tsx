@@ -92,7 +92,10 @@ export default function Composer() {
       onClose={close}
       heading={isPlan ? 'New plan' : 'New bucket-list idea'}
     >
-      <div className={f.group} style={{ marginTop: 14 }}>
+      <span className={f.label} style={{ marginTop: 14 }}>
+        {isPlan ? 'Plan' : 'Idea'}
+      </span>
+      <div className={f.group}>
         <input
           className={f.input}
           value={title}
@@ -104,11 +107,18 @@ export default function Composer() {
             if (e.key === 'Enter') void save();
           }}
         />
+      </div>
+
+      <span className={f.label}>
+        Notes <span className={f.hint}>— optional</span>
+      </span>
+      <div className={f.group}>
         <textarea
           className={f.input}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes — optional"
+          placeholder="Anything worth remembering"
+          rows={3}
         />
       </div>
 

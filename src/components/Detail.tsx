@@ -170,7 +170,10 @@ export default function Detail() {
 
       {mode === 'edit' && (
         <>
-          <div className={f.group} style={{ marginTop: 14 }}>
+          <span className={f.label} style={{ marginTop: 14 }}>
+            Name
+          </span>
+          <div className={f.group}>
             <input
               className={f.input}
               value={title}
@@ -178,11 +181,17 @@ export default function Detail() {
               placeholder="Name"
               enterKeyHint="done"
             />
+          </div>
+          <span className={f.label}>
+            Notes <span className={f.hint}>— optional</span>
+          </span>
+          <div className={f.group}>
             <textarea
               className={f.input}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notes — optional"
+              placeholder="Anything worth remembering"
+              rows={3}
             />
           </div>
           <span className={f.label}>Cover</span>
