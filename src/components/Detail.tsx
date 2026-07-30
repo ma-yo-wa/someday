@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import Sheet from './Sheet';
-import GiphyPicker from './GiphyPicker';
+import CoverPicker from './CoverPicker';
+import CoverArt from './CoverArt';
 import { useApp, partnerName } from '../lib/store';
 import { isPlan } from '../lib/types';
 import { artFor } from '../lib/art';
@@ -161,7 +162,7 @@ export default function Detail() {
       </div>
 
       {item.image_url && mode === 'view' && (
-        <div className={s.cover} style={{ backgroundImage: `url(${item.image_url})` }} />
+        <CoverArt url={item.image_url} size="hero" className={s.cover} />
       )}
 
       {mode === 'view' && item.description && (
@@ -195,7 +196,7 @@ export default function Detail() {
             />
           </div>
           <span className={f.label}>Cover</span>
-          <GiphyPicker value={cover} onChange={setCover} titleHint={() => title} />
+          <CoverPicker value={cover} onChange={setCover} titleHint={() => title} />
           <div className={f.row}>
             <button
               type="button"

@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import CoverArt from '../components/CoverArt';
 import { useApp, partnerName } from '../lib/store';
 import { isBucketItem } from '../lib/types';
 import { tintsFor } from '../lib/tint';
@@ -52,9 +53,7 @@ export default function BucketList() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.055, duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
         >
-          {a.image_url && (
-            <div className={s.art} style={{ backgroundImage: `url(${a.image_url})` }} />
-          )}
+          {a.image_url && <CoverArt url={a.image_url} size="card" className={s.art} />}
           <div className={s.veil} />
 
           <span

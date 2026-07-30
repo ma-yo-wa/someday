@@ -1,0 +1,34 @@
+.photo,
+.emoji {
+  background-size: cover;
+  background-position: center;
+}
+
+.emoji {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(155deg, #ffe8ef 0%, #fff3e0 55%, #eaf5df 100%);
+}
+
+.emoji span {
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(23, 20, 15, 0.12));
+}
+
+.card.emoji span {
+  font-size: 56px;
+}
+
+.hero.emoji span {
+  font-size: 72px;
+}
+
+.thumb.emoji span {
+  font-size: 36px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .emoji {
+    background: linear-gradient(155deg, #3a1a24 0%, #2a2418 55%, #1e2a17 100%);
+  }
+}

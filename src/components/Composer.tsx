@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import Sheet from './Sheet';
-import GiphyPicker from './GiphyPicker';
+import CoverPicker from './CoverPicker';
 import { useApp } from '../lib/store';
 import { addDays, iso, nextSaturday, parseISO, pretty } from '../lib/date';
 import f from './Form.module.css';
@@ -202,7 +202,7 @@ export default function Composer() {
       <span className={f.label}>
         Cover <span className={f.hint}>— optional</span>
       </span>
-      <GiphyPicker value={cover} onChange={setCover} titleHint={() => title} />
+      <CoverPicker value={cover} onChange={setCover} titleHint={() => title} />
 
       <div className={f.row}>
         <button type="button" className={`${f.btn} ${f.ghost}`} onClick={close}>
