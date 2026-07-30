@@ -118,7 +118,24 @@ Do these when the basic app is live and you both have accounts — not before.
 |---|---|
 | Giphy covers | Free key from [developers.giphy.com](https://developers.giphy.com/) → Cloudflare env `VITE_GIPHY_API_KEY` → redeploy. (Edge Function path is optional later.) |
 | Web Push | `node vapid-keygen.mjs`, secrets + `push-fan-out` function, fill `private.app_config` in `push.sql` comments, paste public key in Settings (or `VITE_VAPID_PUBLIC_KEY`) |
-| Google Calendar | Google Cloud OAuth client (Web), add Pages origin, paste client ID / set `VITE_GOOGLE_CLIENT_ID` |
+| Google Calendar | See **Google Calendar setup** below |
+
+### Google Calendar setup
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → create/select a project.
+2. **APIs & Services → Library** → enable **Google Calendar API**.
+3. **OAuth consent screen** → External → app name `Someday` → add your Google
+   account as a **Test user** (while the app is in Testing).
+4. **Credentials → Create credentials → OAuth client ID → Web application**:
+   - Authorized JavaScript origins (no trailing slash):
+     - `https://someday-app.writemayowa.workers.dev`
+     - `http://localhost:5173`
+   - Authorized redirect URIs (same two URLs are fine if asked).
+5. Copy the **Client ID** (`….apps.googleusercontent.com`).
+6. Cloudflare → project → Variables → Production:
+   - `VITE_GOOGLE_CLIENT_ID` = that client ID → **redeploy**.
+7. On the phone, open the site in **Safari/Chrome** (not the home-screen icon
+   the first time) → Settings → turn on **Google Calendar** → approve.
 
 ---
 

@@ -9,15 +9,22 @@ declare global {
           initTokenClient: (cfg: {
             client_id: string;
             scope: string;
-            callback: (resp: { access_token?: string; error?: string }) => void;
-          }) => { requestAccessToken: () => void };
+            prompt?: string;
+            callback: (resp: {
+              access_token?: string;
+              error?: string;
+              error_description?: string;
+            }) => void;
+            error_callback?: (err: { type?: string; message?: string }) => void;
+          }) => { requestAccessToken: (opts?: { prompt?: string }) => void };
         };
       };
     };
   }
 }
 
-const TOKEN_KEY = 'os.gcalToken';
+const TOKEN_KEY = 'someday.gcalToken';
+const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -29,7 +36,7 @@ function loadScript(src: string): Promise<void> {
     s.src = src;
     s.async = true;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Couldn’t load Google'));
+    s.onerror = () => reject(new Error('Couldn’t load Google Sign-In'));
     document.head.appendChild(s);
   });
 }
@@ -41,9 +48,17 @@ function toLocal(iso: string, allDay: boolean): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+export function googleClientId(): string {
+  return loadConfig().googleClientId.trim();
+}
+
 export async function connectGoogle(): Promise<string> {
-  const clientId = loadConfig().googleClientId.trim();
-  if (!clientId) throw new Error('Add a Google client ID in Settings first');
+  const clientId = googleClientId();
+  if (!clientId) {
+    throw new Error(
+      'Missing Google client ID. Set VITE_GOOGLE_CLIENT_ID in Cloudflare (or paste it in Settings), then redeploy.',
+    );
+  }
 
   await loadScript('https://accounts.google.com/gsi/client');
   if (!window.google) throw new Error('Google Sign-In didn’t load');
@@ -51,10 +66,17 @@ export async function connectGoogle(): Promise<string> {
   return new Promise((resolve, reject) => {
     const tc = window.google!.accounts.oauth2.initTokenClient({
       client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+      scope: SCOPE,
+      prompt: 'consent',
       callback: (resp) => {
         if (resp.error || !resp.access_token) {
-          reject(new Error('Google declined the request'));
+          reject(
+            new Error(
+              resp.error_description ||
+                resp.error ||
+                'Google declined calendar access',
+            ),
+          );
           return;
         }
         try {
@@ -63,6 +85,9 @@ export async function connectGoogle(): Promise<string> {
           /* private mode */
         }
         resolve(resp.access_token);
+      },
+      error_callback: (err) => {
+        reject(new Error(err.message || err.type || 'Google sign-in failed'));
       },
     });
     tc.requestAccessToken();
@@ -102,6 +127,10 @@ export async function fetchGoogleEvents(
     '&singleEvents=true&orderBy=startTime&maxResults=250';
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 401 || res.status === 403) {
+    clearGoogleToken();
+    throw new Error('Google access expired — connect again');
+  }
   if (!res.ok) throw new Error("Couldn't read Google Calendar");
 
   const body = (await res.json()) as {

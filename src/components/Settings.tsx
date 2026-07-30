@@ -8,6 +8,7 @@ import {
   clearGoogleToken,
   connectGoogle,
   fetchGoogleEvents,
+  googleClientId,
   googleToken,
 } from '../lib/gcal';
 import {
@@ -185,29 +186,37 @@ export default function Settings() {
                 }
                 try {
                   const token = await connectGoogle();
-                  const events = await fetchGoogleEvents(token, String(config.me));
+                  const owner = space?.myId ?? String(config.me);
+                  const events = await fetchGoogleEvents(token, owner);
                   setExternal(events);
                   setGcalOn(true);
-                  toast(`Showing ${events.length} events`);
+                  toast(
+                    events.length
+                      ? `Showing ${events.length} Google events`
+                      : 'Connected — no events in the next few months',
+                  );
                 } catch (err) {
+                  setGcalOn(false);
                   toast(err instanceof Error ? err.message : 'Google connect failed');
                 }
               })();
             }}
           />
         </div>
-        <div className={f.listRow}>
-          <span className={f.rowLabel}>Sample events</span>
-          <Switch
-            on={external.length > 0 && !gcalOn}
-            onChange={togglePreview}
-            label="Show sample calendar events"
-          />
-        </div>
+        {!gcalOn && (
+          <div className={f.listRow}>
+            <span className={f.rowLabel}>Sample events</span>
+            <Switch
+              on={external.length > 0 && !gcalOn}
+              onChange={togglePreview}
+              label="Show sample calendar events"
+            />
+          </div>
+        )}
       </div>
       <p className={f.rowNote}>
-        Imported events stay read-only and share their titles by default. They
-        never become plans.
+        Read-only overlay from your primary Google Calendar. Never becomes a
+        plan. Best from Safari/Chrome (not the home-screen icon) the first time.
       </p>
 
       <span className={f.label}>Google client ID</span>
@@ -221,6 +230,11 @@ export default function Settings() {
           spellCheck={false}
         />
       </div>
+      <p className={f.rowNote}>
+        {googleClientId()
+          ? 'Client ID is set. Origins must include this site’s URL in Google Cloud.'
+          : 'Create an OAuth Web client in Google Cloud, enable Calendar API, then paste the client ID (or set VITE_GOOGLE_CLIENT_ID and redeploy).'}
+      </p>
 
       <span className={f.label}>Notifications</span>
       <div className={f.group}>
