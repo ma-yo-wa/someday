@@ -1,0 +1,2420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F9F6F2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Us">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Our Space</title>
+<style>
+/* =====================================================================
+   OUR SPACE — design system
+   Palette sampled from the avatar: a soft orb running hot rose at the
+   core, out through coral and peach, to a pale green rim. The whole
+   sweep sits at roughly one lightness (L≈.77), which is what makes it
+   read as a glow rather than as a gradient. Two consequences shape
+   everything below:
+     1. These are pastels. None of them can carry white text, so
+        anything filled with an orb colour takes ink on top instead.
+     2. The sweep has two ends, and the app has two states. Green is
+        an Idea, rose is a Plan, and scheduling travels the gradient.
+   ===================================================================== */
+:root{
+  --paper:        #F9F6F2;
+  --paper-warm:   #FFFDFB;
+  --paper-sunk:   #EFEAE3;
+  --ink:          #17140F;
+  --ink-2:        #3B352C;
+  --ink-soft:     #7C7365;
+  --ink-faint:    #A79E90;
+  --rule:         #E4DCD0;
+
+  /* the orb itself, sampled by radius — used only for real gradients */
+  --orb-rose:     #FD8696;
+  --orb-coral:    #FDA492;
+  --orb-peach:    #F0C296;
+  --orb-sand:     #E1D4A0;
+  --orb-olive:    #D6DEAA;
+  --orb-green:    #CDE7B3;
+  --orb-mint:     #D2EEC8;
+
+  /* Rose = a Plan. Fills take ink, never white. -ink is the same hue
+     pushed dark enough to be read as text on paper (5.1:1). */
+  --rose:         #F2648B;
+  --rose-ink:     #C4285A;
+  --rose-wash:    #FFEAEE;
+
+  /* Sage = an Idea. Same rules. */
+  --sage:         #A8CE85;
+  --sage-ink:     #4F7735;
+  --sage-wash:    #EDF6E3;
+
+  --ext:          #98917F;      /* external / read-only google events   */
+  --ext-wash:     #ECE7DA;
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-sm: 9px;
+
+  --shadow-card: 0 1px 0 rgba(23,20,15,.05), 0 10px 26px -14px rgba(23,20,15,.35);
+  --shadow-lift: 0 2px 0 rgba(23,20,15,.05), 0 22px 44px -18px rgba(23,20,15,.42);
+
+  /* San Francisco on Apple devices via -apple-system; each other platform
+     resolves to its own native UI face. No webfont request, which also
+     means type still renders correctly with no network. */
+  --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --ui:      -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family:var(--ui);
+  color:var(--ink);
+  /* The orb, unwrapped across the viewport: rose bloom behind the
+     masthead, greens pushed out to the edges, peach pooling at the
+     bottom. Same order the avatar runs in, centre to rim. */
+  background:
+    radial-gradient(88% 46% at 50% -10%, rgba(253,134,150,.40) 0%, rgba(253,164,146,.20) 44%, transparent 74%),
+    radial-gradient(64% 40% at 104% 16%, rgba(205,231,179,.52) 0%, transparent 62%),
+    radial-gradient(64% 42% at -6% 30%,  rgba(214,222,170,.44) 0%, transparent 64%),
+    radial-gradient(130% 56% at 50% 114%, rgba(240,194,150,.34) 0%, transparent 66%),
+    var(--paper);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+/* Paper grain. Non-interactive, sits over everything. */
+body::after{
+  content:'';
+  position:fixed; inset:0; z-index:9999; pointer-events:none;
+  opacity:.5; mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.36'/%3E%3C/svg%3E");
+}
+
+.stage{
+  max-width:480px; margin:0 auto; min-height:100vh;
+  display:flex; flex-direction:column; position:relative;
+}
+
+/* ---------- entrance choreography ---------- */
+@keyframes rise{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;} }
+@keyframes inkIn{ from{opacity:0; letter-spacing:.12em;} to{opacity:1; letter-spacing:-.035em;} }
+@keyframes ruleDraw{ from{transform:scaleX(0);} to{transform:scaleX(1);} }
+@keyframes pulseDot{ 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.35; transform:scale(.82);} }
+@keyframes sheetUp{ from{transform:translateY(100%);} to{transform:translateY(0);} }
+@keyframes popIn{ from{opacity:0; transform:scale(.9) translateY(6px);} to{opacity:1; transform:none;} }
+.rise{ animation:rise .62s var(--ease) both; animation-delay:calc(var(--i,0) * 55ms); }
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important; animation-delay:0ms !important; transition-duration:.001ms !important;}
+}
+
+/* ---------- masthead: a title and the two of you, nothing else ---------- */
+.vh{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap;
+}
+.masthead{
+  padding:24px 22px 4px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.masthead h1{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:clamp(29px, 8.4vw, 36px);
+  line-height:1.1; margin:0; letter-spacing:-.03em;
+  animation:inkIn .9s var(--ease) both;
+}
+/* Connection state is a dot on the avatars, not a badge with a word in
+   it — "LOCAL" told the user nothing they could act on. */
+.masthead .who{
+  position:relative; flex:0 0 auto;
+  background:none; border:none; padding:0; cursor:pointer;
+  display:flex; align-items:center;
+}
+.masthead .who .bulb{
+  position:absolute; right:-1px; bottom:-1px;
+  width:9px; height:9px; border-radius:50%;
+  background:var(--ink-faint); border:2px solid var(--paper);
+}
+.masthead .who.on .bulb{ background:var(--rose); animation:pulseDot 2.4s ease-in-out infinite; }
+.masthead .who.flash .bulb{ background:var(--rose-ink); }
+
+.pair{ display:flex; align-items:center; }
+.pair .face{
+  width:30px; height:30px; border-radius:50%;
+  display:grid; place-items:center;
+  font-size:12px; font-weight:600; color:var(--paper-warm);
+  border:2px solid var(--paper); cursor:pointer;
+}
+.pair .face + .face{ margin-left:-10px; }
+.pair .face.dim{ filter:saturate(.25) opacity(.55); }
+
+/* ---------- bottom bar: Plans · Create · Ideas ----------
+   One floating slab. The centre is the only saturated thing on screen,
+   so "make something" is never a hunt.                                 */
+.dock{
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  max-width:480px; margin:0 auto;
+  padding:22px 22px calc(14px + var(--safe-b));
+  background:linear-gradient(180deg, rgba(249,246,242,0) 0%, var(--paper) 42%);
+  pointer-events:none;
+}
+.dock-inner{
+  pointer-events:auto;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  background:rgba(255,253,251,.72);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  border:.5px solid rgba(23,20,15,.10);
+  border-radius:999px;
+  padding:7px 8px;
+  box-shadow:0 8px 28px -12px rgba(23,20,15,.28);
+}
+.dock button{
+  background:none; border:none; cursor:pointer; font-family:var(--ui);
+  display:flex; align-items:center; justify-content:center;
+  padding:11px 4px; color:var(--ink-faint);
+  transition:color .3s var(--ease);
+}
+.dock button .lbl{
+  font-family:var(--display); font-size:14.5px; font-weight:600;
+  letter-spacing:-.015em;
+}
+.dock button.on{ color:var(--ink); }
+/* The avatar, once, at the one control that starts both states. Kept
+   crisp and small — the glow version read as decoration. */
+.dock .make{
+  width:44px; height:44px; border-radius:50%;
+  border:none; cursor:pointer; padding:0;
+  background:radial-gradient(circle at 50% 44%,
+    #FF7396 0%, var(--orb-rose) 22%, var(--orb-coral) 46%,
+    var(--orb-peach) 66%, var(--orb-green) 100%);
+  display:grid; place-items:center;
+  box-shadow:0 1px 2px rgba(23,20,15,.18);
+  transition:transform .28s var(--ease);
+}
+.dock .make:active{ transform:scale(.92); }
+.dock .make .plus{ position:relative; width:16px; height:16px; }
+.dock .make .plus::before,
+.dock .make .plus::after{
+  content:''; position:absolute; background:var(--ink); border-radius:2px;
+}
+.dock .make .plus::before{ left:50%; top:0; width:2px; height:100%; transform:translateX(-50%); }
+.dock .make .plus::after{ top:50%; left:0; height:2px; width:100%; transform:translateY(-50%); }
+
+main{ flex:1; padding:12px 22px 122px; }
+
+.screen{ display:none; }
+.screen.on{ display:block; }
+
+/* ---------- bucket list cards ---------- */
+.board{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+.idea{
+  position:relative; border-radius:var(--radius-lg); overflow:hidden;
+  aspect-ratio:3/4; cursor:pointer; isolation:isolate;
+  background:var(--ink-2); color:var(--paper-warm);
+  box-shadow:var(--shadow-card);
+  transition:transform .4s var(--ease), box-shadow .4s var(--ease);
+}
+.idea:active{ transform:scale(.978); }
+@media (hover:hover){ .idea:hover{ transform:translateY(-4px); box-shadow:var(--shadow-lift); } }
+.idea .art{ position:absolute; inset:0; background-size:cover; background-position:center; }
+.idea .veil{
+  position:absolute; inset:0;
+  background:linear-gradient(178deg, rgba(23,20,15,.06) 0%, rgba(23,20,15,.10) 42%, rgba(23,20,15,.78) 100%);
+}
+.idea .mono{
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-size:74px; opacity:.34; transform:rotate(-7deg) scale(1.1);
+}
+.idea .body{ position:absolute; left:14px; right:14px; bottom:13px; }
+.idea h3{
+  font-family:var(--display);
+  font-size:17px; font-weight:600; line-height:1.22; margin:0;
+  letter-spacing:-.015em; text-wrap:balance;
+}
+.idea .foot{
+  margin-top:7px; display:flex; align-items:center; gap:6px;
+  font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:rgba(246,242,236,.72); font-weight:600;
+}
+.idea .sched{
+  position:absolute; top:11px; right:11px; z-index:3;
+  border:none; cursor:pointer;
+  background:var(--paper-warm); color:var(--ink);
+  font-family:var(--ui); font-size:10px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase;
+  padding:7px 11px; border-radius:20px;
+  box-shadow:0 4px 12px -4px rgba(23,20,15,.5);
+  transition:background .25s var(--ease), color .25s var(--ease), transform .25s var(--ease);
+}
+.idea .sched:active{ transform:scale(.94); }
+@media (hover:hover){ .idea .sched:hover{ background:var(--rose); color:var(--ink); } }
+.idea .stamp{
+  position:absolute; top:12px; left:12px; z-index:3;
+  font-size:9.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--paper-warm); opacity:.82;
+  display:flex; align-items:center; gap:5px;
+}
+.idea .stamp i{ width:5px; height:5px; border-radius:50%; background:currentColor; font-style:normal; }
+
+/* ---------- calendar ---------- */
+.calbar{ display:flex; align-items:center; justify-content:space-between; margin:20px 0 16px; }
+.calbar h2{
+  font-family:var(--display); font-weight:700;
+  font-size:26px; margin:0; letter-spacing:-.025em;
+}
+.calbar .arrows{ display:flex; gap:6px; }
+.calbar button{
+  width:34px; height:34px; border-radius:50%; cursor:pointer;
+  border:1px solid var(--rule); background:rgba(255,255,255,.45);
+  color:var(--ink); font-size:15px; line-height:1;
+  display:grid; place-items:center;
+  transition:background .25s var(--ease), border-color .25s var(--ease);
+}
+.calbar button:active{ background:var(--paper-sunk); }
+
+.grid{ border-top:1px solid var(--rule); }
+.dow{
+  display:grid; grid-template-columns:repeat(7,1fr);
+  font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; text-align:center;
+  padding:10px 0 8px;
+}
+.days{ display:grid; grid-template-columns:repeat(7,1fr); }
+.day{
+  aspect-ratio:1/1.06; position:relative; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+  font-size:13px; font-weight:500; color:var(--ink-2);
+  border-radius:var(--radius-md);
+  transition:background .25s var(--ease), color .25s var(--ease);
+}
+.day.out{ color:var(--ink-faint); opacity:.45; }
+.day.now .num{
+  font-weight:700; color:var(--rose-ink);
+}
+.day.now::before{
+  content:''; position:absolute; inset:auto; width:30px; height:30px; border-radius:50%;
+  border:1.5px dashed #F3B9C9; top:50%; left:50%; transform:translate(-50%,-62%);
+}
+.day.pick{ background:var(--ink); color:var(--paper-warm); }
+.day.pick .num{ color:var(--paper-warm); }
+.day.pick::before{ border-color:rgba(246,242,236,.4); }
+.day.drop{ background:var(--rose-wash); outline:1.5px dashed var(--rose); outline-offset:-4px; }
+.day .num{ position:relative; z-index:2; }
+.day .marks{ display:flex; gap:3px; height:5px; align-items:center; z-index:2; }
+.day .marks i{ width:5px; height:5px; border-radius:50%; background:var(--rose); }
+.day .marks i.ext{ background:none; border:1px solid var(--ext); width:5px; height:5px; }
+.day.pick .marks i{ background:var(--paper-warm); }
+.day.pick .marks i.ext{ background:none; border-color:rgba(246,242,236,.65); }
+
+/* agenda */
+.agenda{ margin-top:26px; }
+.agenda .daylabel{
+  font-family:var(--display); font-size:12px; font-weight:600;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-2);
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+}
+.agenda .daylabel .line{ flex:1; height:1px; background:var(--rule); }
+.agenda .daylabel button{
+  border:none; background:var(--ink); color:var(--paper-warm);
+  width:22px; height:22px; border-radius:50%; cursor:pointer;
+  font-size:14px; line-height:1; display:grid; place-items:center;
+}
+
+.entry{
+  display:flex; gap:14px; padding:13px 0;
+  border-bottom:1px solid var(--rule); cursor:pointer;
+  transition:opacity .25s var(--ease);
+}
+.entry:first-child{ border-top:1px solid var(--rule); }
+.entry .when{
+  flex:0 0 62px; font-size:11px; font-weight:600; letter-spacing:.06em;
+  color:var(--ink-soft); padding-top:3px; text-transform:uppercase;
+}
+.entry .what{ flex:1; min-width:0; }
+.entry .what h4{
+  font-family:var(--display); font-size:16px; font-weight:600; margin:0;
+  letter-spacing:-.015em;
+}
+.entry .what p{ margin:3px 0 0; font-size:12px; color:var(--ink-soft); line-height:1.45; }
+.entry .who{
+  margin-top:7px; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; display:flex; align-items:center; gap:6px;
+}
+.entry .swatch{ width:3px; align-self:stretch; border-radius:2px; background:var(--rose); }
+
+/* external google events: faded, hatched, obviously not "ours" */
+.entry.external{ opacity:.62; }
+.entry.external .swatch{
+  background:repeating-linear-gradient(135deg, var(--ext) 0 3px, transparent 3px 6px);
+}
+.entry.external .what h4{ font-family:var(--ui); font-size:13.5px; font-weight:600; letter-spacing:0; }
+.entry.external .tag{
+  display:inline-block; margin-left:7px; vertical-align:middle;
+  font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
+  color:var(--ext); border:1px solid var(--ext-wash); background:var(--ext-wash);
+  padding:2px 6px; border-radius:20px;
+}
+
+/* Empty states say what goes here and offer the action, rather than
+   drawing a dashed box around the absence of one. */
+.blank{
+  grid-column:1/-1;
+  padding:52px 20px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.blank p{
+  margin:0; max-width:24ch;
+  font-size:15px; line-height:1.5; letter-spacing:-.01em;
+  color:var(--ink-soft);
+}
+.blank button{
+  font-family:var(--ui); font-size:14.5px; font-weight:600;
+  letter-spacing:-.01em; color:var(--ink);
+  background:var(--rose); border:none; border-radius:999px;
+  padding:11px 22px; cursor:pointer;
+  transition:transform .25s var(--ease);
+}
+.blank button:active{ transform:scale(.95); }
+
+/* ---------- sheets ---------- */
+.veil-bg{
+  position:fixed; inset:0; z-index:60;
+  background:rgba(23,20,15,.42); backdrop-filter:blur(3px);
+  opacity:0; pointer-events:none; transition:opacity .3s var(--ease);
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.veil-bg.open{ opacity:1; pointer-events:auto; }
+.sheet{
+  width:100%; max-width:480px; max-height:90vh; overflow-y:auto;
+  background:var(--paper-warm);
+  border-radius:26px 26px 0 0;
+  padding:10px 24px calc(26px + var(--safe-b));
+  transform:translateY(100%);
+  box-shadow:0 -20px 60px -20px rgba(23,20,15,.5);
+}
+.veil-bg.open .sheet{ animation:sheetUp .44s var(--ease) forwards; }
+.grip{ width:38px; height:4px; border-radius:4px; background:var(--rule); margin:8px auto 18px; }
+.sheet h3{
+  font-family:var(--display); font-weight:700;
+  font-size:27px; margin:0 0 4px; letter-spacing:-.03em; line-height:1.18;
+}
+.sheet .eyebrow{
+  font-size:9.5px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin-bottom:8px;
+}
+
+.lab{
+  display:block; font-size:9.5px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--ink-soft); font-weight:700; margin:20px 0 8px;
+}
+.inp, textarea.inp{
+  width:100%; border:none; border-bottom:1.5px solid var(--rule);
+  background:none; padding:8px 0; font-family:var(--display); font-size:16px;
+  letter-spacing:-.01em; color:var(--ink); outline:none;
+  transition:border-color .3s var(--ease);
+}
+.inp:focus, textarea.inp:focus{ border-color:var(--rose); }
+/* 16px floor on anything focusable: below it, iOS Safari zooms the page in. */
+textarea.inp{ resize:none; min-height:56px; font-size:16px; line-height:1.5; }
+
+.chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  border:1px solid var(--rule); background:rgba(255,255,255,.5);
+  color:var(--ink-2); border-radius:999px; cursor:pointer;
+  font-family:var(--ui); font-size:11.5px; font-weight:600;
+  padding:9px 14px; letter-spacing:.02em;
+  transition:all .25s var(--ease);
+}
+.chip:active{ transform:scale(.95); }
+.chip.on{ background:var(--ink); color:var(--paper-warm); border-color:var(--ink); }
+.chip.accent.on{ background:var(--rose); border-color:var(--rose); color:var(--ink); }
+
+/* mini picker calendar */
+.mini{ margin-top:14px; }
+.mini .mhead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.mini .mhead span{ font-family:var(--display); font-size:15px; font-weight:600; letter-spacing:-.01em; }
+.mini .mhead button{
+  width:28px; height:28px; border-radius:50%; border:1px solid var(--rule);
+  background:none; cursor:pointer; color:var(--ink); line-height:1;
+}
+.mini .mdow{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center;
+  font-size:9px; letter-spacing:.1em; color:var(--ink-faint); font-weight:700; margin-bottom:4px; }
+.mini .mdays{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.mini .mday{
+  aspect-ratio:1; display:grid; place-items:center; border-radius:50%;
+  font-size:12.5px; cursor:pointer; color:var(--ink-2);
+  transition:background .2s var(--ease), color .2s var(--ease);
+}
+.mini .mday.out{ color:var(--ink-faint); opacity:.4; }
+.mini .mday.now{ box-shadow:inset 0 0 0 1.5px #F3B9C9; }
+.mini .mday.on{ background:var(--rose); color:var(--ink); font-weight:700; }
+
+.rowbtns{ display:flex; gap:10px; margin-top:26px; }
+.btn{
+  flex:1; border:none; cursor:pointer; border-radius:999px;
+  font-family:var(--ui); font-size:13px; font-weight:700;
+  letter-spacing:.04em; padding:15px 18px;
+  transition:transform .25s var(--ease), opacity .25s var(--ease);
+}
+.btn:active{ transform:scale(.975); }
+.btn.ghost{ background:none; color:var(--ink-soft); border:1.5px solid var(--rule); }
+.btn.solid{ background:var(--ink); color:var(--paper-warm); }
+.btn.accent{ background:var(--rose); color:var(--ink); }
+.btn.danger{ background:none; color:var(--rose-ink); border:1.5px solid var(--rose-wash); }
+.btn:disabled{ opacity:.4; cursor:default; }
+
+/* ---------- history timeline ---------- */
+.history{ margin-top:30px; padding-top:22px; border-top:1px solid var(--rule); }
+.history .cap{
+  font-size:9.5px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin-bottom:18px;
+}
+.tl{ position:relative; padding-left:22px; }
+.tl::before{
+  content:''; position:absolute; left:4px; top:5px; bottom:5px; width:1px;
+  background:linear-gradient(180deg, var(--rule), transparent);
+}
+.tl li{ list-style:none; position:relative; padding:0 0 20px; }
+.tl li:last-child{ padding-bottom:0; }
+.tl li::before{
+  content:''; position:absolute; left:-22px; top:4px;
+  width:9px; height:9px; border-radius:50%;
+  background:var(--paper-warm); border:1.5px solid var(--ink-faint);
+  animation:popIn .5s var(--ease) both; animation-delay:calc(var(--i,0) * 70ms);
+}
+.tl li.key::before{ background:var(--rose); border-color:var(--rose); }
+.tl .act{ font-size:13px; line-height:1.5; color:var(--ink-2); }
+.tl .act b{ font-weight:700; color:var(--ink); }
+.tl .stamp{
+  display:block; margin-top:3px;
+  font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint);
+}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed; left:50%; bottom:118px; transform:translate(-50%, 12px);
+  background:var(--ink); color:var(--paper-warm);
+  font-size:12px; font-weight:600; letter-spacing:.02em;
+  padding:11px 20px; border-radius:999px; z-index:200;
+  opacity:0; pointer-events:none;
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
+  box-shadow:var(--shadow-lift);
+}
+.toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+/* ---------- settings rows ---------- */
+.srow{
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:15px 0; border-bottom:1px solid var(--rule);
+}
+.srow .t{ font-size:13.5px; font-weight:600; }
+.srow .d{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; line-height:1.45; }
+.srow .btn{ flex:0 0 auto; padding:10px 16px; font-size:11.5px; }
+.mono-inp{
+  width:100%; border:1px solid var(--rule); border-radius:var(--radius-sm);
+  background:rgba(255,255,255,.55); padding:10px 12px; outline:none;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; color:var(--ink);
+  margin-top:8px;
+}
+.note{
+  font-size:11.5px; line-height:1.6; color:var(--ink-soft);
+  background:rgba(255,255,255,.45); border-left:2px solid var(--rose);
+  padding:11px 14px; border-radius:0 var(--radius-sm) var(--radius-sm) 0; margin-top:16px;
+}
+/* ---------- notification toggle: a lamp, not a switch ---------- */
+.bell{
+  display:flex; align-items:center; gap:16px;
+  padding:18px; margin-top:6px;
+  border:1.5px solid var(--rule); border-radius:var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 82% -20%, rgba(242,100,139,0) 0%, transparent 60%),
+    rgba(255,255,255,.42);
+  transition:border-color .45s var(--ease), background .45s var(--ease);
+}
+.bell.on{
+  border-color:#EEC2CE;
+  background:
+    radial-gradient(120% 140% at 82% -20%, rgba(242,100,139,.18) 0%, transparent 62%),
+    rgba(255,255,255,.6);
+}
+.bell.blocked{ border-color:var(--rule); opacity:.72; }
+.bell .glass{
+  flex:0 0 auto; width:54px; height:54px; border-radius:50%;
+  display:grid; place-items:center; position:relative;
+  background:var(--paper-sunk);
+  transition:background .45s var(--ease);
+}
+.bell.on .glass{ background:var(--rose); }
+.bell .glass::after{
+  content:''; position:absolute; inset:-6px; border-radius:50%;
+  border:1.5px solid var(--rose); opacity:0; transform:scale(.82);
+  transition:opacity .5s var(--ease), transform .5s var(--ease);
+}
+.bell.on .glass::after{ opacity:.45; transform:scale(1); }
+.bell.on .glass svg{ animation:swing 2.6s var(--ease) 1; }
+@keyframes swing{
+  0%,100%{ transform:rotate(0); }
+  12%{ transform:rotate(15deg); } 26%{ transform:rotate(-12deg); }
+  40%{ transform:rotate(7deg); }  54%{ transform:rotate(-4deg); }
+  66%{ transform:rotate(0); }
+}
+.bell .glass svg{ color:var(--ink-faint); transition:color .45s var(--ease); transform-origin:50% 18%; }
+.bell.on .glass svg{ color:var(--ink); }
+.bell .copy{ flex:1; min-width:0; }
+.bell .copy h4{
+  font-family:var(--display); font-size:16.5px; font-weight:600; margin:0;
+  letter-spacing:-.015em;
+}
+.bell .copy p{ margin:4px 0 0; font-size:11.5px; line-height:1.5; color:var(--ink-soft); }
+.bell .knob{
+  flex:0 0 auto; width:52px; height:30px; border-radius:999px;
+  border:1.5px solid var(--rule); background:var(--paper-sunk);
+  position:relative; cursor:pointer; padding:0;
+  transition:background .38s var(--ease), border-color .38s var(--ease);
+}
+.bell .knob::after{
+  content:''; position:absolute; top:2px; left:2px;
+  width:22px; height:22px; border-radius:50%; background:var(--paper-warm);
+  box-shadow:0 2px 5px rgba(23,20,15,.28);
+  transition:transform .38s var(--ease);
+}
+.bell.on .knob{ background:var(--rose); border-color:var(--rose); }
+.bell.on .knob::after{ transform:translateX(22px); }
+.bell .knob:disabled{ cursor:not-allowed; opacity:.5; }
+.bell-extra{
+  margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+}
+.bell-state{
+  font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; font-weight:700;
+  color:var(--ink-faint);
+}
+.bell-state b{ color:var(--rose-ink); font-weight:700; }
+
+/* ---------- giphy picker ---------- */
+.cover{
+  position:relative; margin-top:10px; border-radius:var(--radius-lg); overflow:hidden;
+  background:var(--paper-sunk); aspect-ratio:16/9;
+  animation:rise .45s var(--ease) both;
+}
+.cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+.cover .shade{
+  position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(23,20,15,0) 45%, rgba(23,20,15,.6) 100%);
+}
+.cover .tools{ position:absolute; right:10px; bottom:10px; display:flex; gap:7px; }
+.cover .tool{
+  border:none; cursor:pointer; border-radius:999px;
+  background:rgba(246,242,236,.94); color:var(--ink);
+  font-family:var(--ui); font-size:10px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase; padding:7px 12px;
+  transition:background .25s var(--ease), color .25s var(--ease);
+}
+.cover .tool:active{ transform:scale(.95); }
+.cover .tool.danger:hover{ background:var(--rose); color:var(--ink); }
+
+.gifbar{ position:relative; }
+.gifbar .spin{
+  position:absolute; right:0; top:12px;
+  width:13px; height:13px; border-radius:50%;
+  border:1.6px solid var(--rule); border-top-color:var(--rose);
+  animation:spin .7s linear infinite; display:none;
+}
+.gifbar.loading .spin{ display:block; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.gifstrip{
+  display:flex; gap:7px; margin-top:11px;
+  overflow-x:auto; overflow-y:hidden;
+  padding-bottom:6px; scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+}
+.gifstrip::-webkit-scrollbar{ height:3px; }
+.gifstrip::-webkit-scrollbar-thumb{ background:var(--rule); border-radius:3px; }
+.gifstrip img{
+  height:74px; width:auto; min-width:64px; max-width:132px; object-fit:cover;
+  border-radius:var(--radius-sm); cursor:pointer; display:block; flex:0 0 auto;
+  background:var(--paper-sunk); scroll-snap-align:start;
+  border:2.5px solid transparent;
+  transition:border-color .2s var(--ease), transform .2s var(--ease);
+  animation:popIn .34s var(--ease) both; animation-delay:calc(var(--i,0) * 24ms);
+}
+.gifstrip img:active{ transform:scale(.95); }
+@media (hover:hover){ .gifstrip img:hover{ border-color:var(--ink-faint); } }
+.gifstrip img.on{ border-color:var(--rose); }
+
+.gifmsg{
+  font-size:11.5px; line-height:1.5; color:var(--ink-soft);
+  padding:14px 2px 4px; display:flex; align-items:center; gap:9px;
+}
+.gifmsg .retry{
+  border:1px solid var(--rule); background:none; color:var(--ink);
+  border-radius:999px; padding:5px 11px; cursor:pointer;
+  font-family:var(--ui); font-size:10.5px; font-weight:600;
+}
+.gifnote{
+  font-size:9.5px; color:var(--ink-faint); letter-spacing:.12em;
+  text-transform:uppercase; margin-top:7px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.gifnote span[role=button]{ cursor:pointer; text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <header class="masthead">
+    <h1 id="spaceName">Our Space</h1>
+    <button class="who" id="liveBadge" aria-label="Settings">
+      <span class="pair" id="pairFaces"></span>
+      <span class="bulb" aria-hidden="true"></span>
+      <span id="liveText" class="vh">LOCAL</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="screen on" id="screen-bucket">
+      <div class="board" id="board"></div>
+    </section>
+
+    <section class="screen" id="screen-calendar">
+      <div class="calbar">
+        <h2 id="monthLabel">—</h2>
+        <div class="arrows">
+          <button id="prevMonth" aria-label="Previous month">‹</button>
+          <button id="todayBtn" aria-label="Jump to today" style="width:auto;padding:0 14px;border-radius:999px;font-size:13px;letter-spacing:-.01em;font-weight:600;">Today</button>
+          <button id="nextMonth" aria-label="Next month">›</button>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="dow"><div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div></div>
+        <div class="days" id="days"></div>
+      </div>
+      <div class="agenda">
+        <div class="daylabel" id="dayLabel"></div>
+        <div id="agendaList"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="dock">
+    <div class="dock-inner">
+      <button class="dock-tab" data-screen="calendar"><span class="lbl">Plans</span></button>
+      <button class="make" id="makeBtn" aria-label="Add something">
+        <span class="plus" aria-hidden="true"></span>
+      </button>
+      <button class="dock-tab on" data-screen="bucket"><span class="lbl">Ideas</span></button>
+    </div>
+  </nav>
+</div>
+
+<!-- ============ DETAIL + HISTORY ============ -->
+<div class="veil-bg" id="detailVeil">
+  <div class="sheet" id="detailSheet"></div>
+</div>
+
+<!-- ============ CREATE ============ -->
+<div class="veil-bg" id="makeVeil">
+  <div class="sheet">
+    <div class="grip"></div>
+    <div class="eyebrow" id="mkEyebrow">New idea</div>
+    <h3 id="mkHeading">What should we do?</h3>
+
+    <input class="inp" id="mkTitle" type="text" placeholder="Kayak the Grand River" autocomplete="off" style="font-size:19px;">
+
+    <span class="lab">Notes <span style="text-transform:none;letter-spacing:0;font-weight:500;">— optional</span></span>
+    <textarea class="inp" id="mkNotes" placeholder="Anything worth remembering…"></textarea>
+
+    <span class="lab">When <span style="text-transform:none;letter-spacing:0;font-weight:500;">— skip this and it stays an idea</span></span>
+    <div class="chips" id="mkDates"></div>
+    <div id="mkWhenExtra" style="display:none;">
+      <div class="mini">
+        <div class="mhead">
+          <button id="mkPrev" type="button">‹</button>
+          <span id="mkLabel">—</span>
+          <button id="mkNext" type="button">›</button>
+        </div>
+        <div class="mdow"><div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div></div>
+        <div class="mdays" id="mkDays"></div>
+      </div>
+      <input class="inp" type="time" id="mkTime" style="margin-top:12px;">
+    </div>
+
+    <span class="lab">Cover</span>
+    <div id="mkCoverWrap"></div>
+    <div class="gifbar" id="mkGifBar">
+      <input class="inp" id="mkGif" type="text" placeholder="Find a GIF or Image…" autocomplete="off">
+      <span class="spin" aria-hidden="true"></span>
+    </div>
+    <div class="gifstrip" id="mkGifStrip"></div>
+    <div class="gifmsg" id="mkGifMsg" style="display:none;"></div>
+    <div class="gifnote">
+      <span>Powered by GIPHY</span>
+      <span id="mkGifSuggest" role="button" tabindex="0">Suggest from title</span>
+    </div>
+
+    <div class="rowbtns">
+      <button class="btn ghost" id="mkCancel" type="button">Cancel</button>
+      <button class="btn accent" id="mkSave" type="button">Add to our list</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DATE PICKER ============ -->
+<div class="veil-bg" id="pickVeil">
+  <div class="sheet">
+    <div class="grip"></div>
+    <div class="eyebrow">Give it a date</div>
+    <h3 id="pickTitle">—</h3>
+
+    <span class="lab">Shortcuts</span>
+    <div class="chips" id="quickDates"></div>
+
+    <div class="mini">
+      <div class="mhead">
+        <button id="miniPrev">‹</button>
+        <span id="miniLabel">—</span>
+        <button id="miniNext">›</button>
+      </div>
+      <div class="mdow"><div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div></div>
+      <div class="mdays" id="miniDays"></div>
+    </div>
+
+    <span class="lab">Time <span style="text-transform:none;letter-spacing:0;font-weight:500;">— leave blank for all day</span></span>
+    <div class="chips" id="quickTimes"></div>
+    <input class="inp" type="time" id="pickTime" style="margin-top:10px;">
+
+    <div class="rowbtns">
+      <button class="btn ghost" id="pickCancel">Cancel</button>
+      <button class="btn accent" id="pickConfirm">Lock it in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS / CONNECTIONS ============ -->
+<div class="veil-bg" id="setVeil">
+  <div class="sheet">
+    <div class="grip"></div>
+    <div class="eyebrow">Our Space</div>
+    <h3>Settings</h3>
+
+    <span class="lab">The two of you</span>
+    <input class="inp" id="nameA" type="text" placeholder="Your name">
+    <input class="inp" id="nameB" type="text" placeholder="Their name" style="margin-top:12px;">
+    <span class="lab">I'm signed in as</span>
+    <div class="chips" id="whoAmI"></div>
+
+    <span class="lab">Realtime</span>
+    <div class="srow" style="border-top:1px solid var(--rule);">
+      <div>
+        <div class="t">Supabase</div>
+        <div class="d" id="sbState">Not connected — running on local demo sync.</div>
+      </div>
+    </div>
+    <input class="mono-inp" id="sbUrl" placeholder="https://xxxx.supabase.co" autocomplete="off">
+    <input class="mono-inp" id="sbKey" placeholder="anon public key" autocomplete="off">
+    <input class="mono-inp" id="sbSpace" placeholder="space id (uuid)" autocomplete="off">
+    <div class="rowbtns" style="margin-top:14px;">
+      <button class="btn ghost" id="sbClear">Clear</button>
+      <button class="btn solid" id="sbSave">Connect</button>
+    </div>
+    <div class="note">
+      Demo mode already syncs live between browser tabs — open this file in two tabs
+      side by side and watch an idea appear in both. Paste real Supabase keys to sync
+      between two actual phones.
+    </div>
+
+    <span class="lab">Notifications</span>
+    <div class="bell" id="bell">
+      <div class="glass">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </div>
+      <div class="copy">
+        <h4 id="bellTitle">Buzz me</h4>
+        <p id="bellCopy">When a date gets locked in, or notes change.</p>
+      </div>
+      <button class="knob" id="bellKnob" aria-label="Toggle notifications"></button>
+    </div>
+    <div class="bell-extra">
+      <span class="bell-state" id="bellState">CHECKING…</span>
+      <span style="flex:1"></span>
+      <button class="chip" id="bellPreview">Preview a banner</button>
+    </div>
+    <input class="mono-inp" id="vapidKey" placeholder="VAPID public key" autocomplete="off">
+
+    <span class="lab">Google Calendar — read only</span>
+    <div class="srow" style="border-top:1px solid var(--rule);">
+      <div>
+        <div class="t" id="gcalTitle">Not linked</div>
+        <div class="d">Your personal events appear faded on the calendar so you can spot free time. They are never written into the shared space.</div>
+      </div>
+    </div>
+    <input class="mono-inp" id="gcalId" placeholder="Google OAuth client ID (optional)" autocomplete="off">
+    <div class="rowbtns" style="margin-top:14px;">
+      <button class="btn ghost" id="gcalDemo">Preview with sample events</button>
+      <button class="btn solid" id="gcalConnect">Link Google</button>
+    </div>
+
+    <div class="rowbtns" style="margin-top:26px;">
+      <button class="btn solid" id="setDone" style="flex:1;">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =====================================================================
+   CONFIG + CONSTANTS
+   ===================================================================== */
+const LS_DATA  = "ourspace.data.v1";
+const LS_CONF  = "ourspace.config.v1";
+// Demo-mode fallback only. Giphy's public beta key is public by design —
+// it is NOT a secret and will rate-limit. With Supabase configured the
+// picker goes through the `giphy` Edge Function, where the real
+// GIPHY_API_KEY lives as a server secret and never reaches the browser.
+const GIPHY_KEY = "dc6zaTOxFJmzC";
+
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MON3   = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAYS   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+const ART = [
+  [/hike|hiking|trail|mountain|camp|banff|cabin/i, "🏔"],
+  [/beach|sunset|ocean|island|swim/i, "🌅"],
+  [/flight|fly|airport|trip|travel|vacation|abroad/i, "✈️"],
+  [/kayak|canoe|paddle|river|boat|cruise|harbour|harbor/i, "🛶"],
+  [/bike|cycl|ride/i, "🚲"],
+  [/dinner|restaurant|ramen|sushi|food|brunch|lunch|eat|waffle/i, "🍜"],
+  [/coffee|cafe|espresso/i, "☕"],
+  [/movie|film|cinema|show/i, "🎞"],
+  [/concert|music|gig|festival|album/i, "🎶"],
+  [/museum|gallery|art|exhibit/i, "🖼"],
+  [/birthday|anniversary|celebrate/i, "🎂"],
+  [/read|book|library/i, "📖"],
+  [/garden|plant|flower|picnic|park/i, "🌿"],
+  [/dance|salsa|club/i, "💃"],
+  [/cook|bake|kitchen|recipe/i, "🍳"],
+  [/game|arcade|board/i, "🎲"],
+  [/spa|massage|rest|lazy|sleep/i, "🛁"],
+  [/drive|road|roadtrip/i, "🛣"],
+];
+function artFor(t){ for(const [re,e] of ART) if(re.test(t)) return e; return "✦"; }
+
+// The orb's hues held at low lightness, so a card can still carry white
+// text. Same sweep as the avatar, walked from the rose core to the rim.
+const PALETTE = ["#5C2437","#6B2E28","#6B4526","#5A5027","#46522B","#31502D"];
+function tintFor(id){
+  let h = 0; for(let i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+const S = {
+  conf: { names:["Mayowa","Aline"], me:0, sbUrl:"", sbKey:"", sbSpace:"", gcalId:"", vapid:"" },
+  activities: [],           // {id,title,description,image_url,created_by,date_time,all_day,created_at}
+  logs: {},                 // activityId -> [{id,user_id,action_type,details,timestamp}]
+  external: [],             // read-only google events {id,title,date,time,calendar}
+  screen: "bucket",
+  cursor: new Date(),
+  picked: null,             // selected calendar day (ISO)
+  detailId: null,
+  pickId: null,
+  pickDate: null,
+  pickCursor: new Date(),
+  gifChoice: null,
+  live: false,
+};
+
+const $  = (s)=>document.querySelector(s);
+const $$ = (s)=>Array.from(document.querySelectorAll(s));
+
+/* =====================================================================
+   SMALL UTILS
+   ===================================================================== */
+function uid(){ return 'a'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function iso(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function todayISO(){ return iso(new Date()); }
+function parseISO(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function esc(s){ const d=document.createElement("div"); d.textContent = s==null?"":String(s); return d.innerHTML; }
+
+// date_time is stored ISO-ish: "YYYY-MM-DD" (all day) or "YYYY-MM-DDTHH:MM"
+function dtDate(v){ return v ? v.slice(0,10) : null; }
+function dtTime(v){ return (v && v.length > 10) ? v.slice(11,16) : null; }
+function isPlan(a){ return !!a.date_time; }
+
+function pretty(t){
+  if(!t) return "";
+  let [h,m] = t.split(":").map(Number);
+  const ap = h>=12 ? "pm":"am";
+  h = ((h+11)%12)+1;
+  return m ? `${h}:${String(m).padStart(2,"0")}${ap}` : `${h}${ap}`;
+}
+function relDay(d){
+  const t = parseISO(todayISO()), x = parseISO(d);
+  const diff = Math.round((x-t)/86400000);
+  if(diff===0) return "Today";
+  if(diff===1) return "Tomorrow";
+  if(diff===-1) return "Yesterday";
+  if(diff>1 && diff<7) return DAYS[x.getDay()];
+  if(diff<0) return `${MON3[x.getMonth()]} ${x.getDate()}`;
+  return `${MON3[x.getMonth()]} ${x.getDate()}`;
+}
+function stamp(ts){
+  const d = new Date(ts);
+  const now = new Date();
+  const mins = Math.round((now-d)/60000);
+  if(mins < 1) return "just now";
+  if(mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins/60);
+  if(hrs < 24) return `${hrs}h ago`;
+  return `${MON3[d.getMonth()]} ${d.getDate()}`;
+}
+function nameOf(i){ return S.conf.names[i] ?? "Someone"; }
+// One partner at each end of the orb.
+function faceColor(i){ return i===0 ? "#4F7735" : "#C4285A"; }
+
+let toastT;
+function toast(msg){
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(()=> el.classList.remove("show"), 2000);
+}
+
+/* =====================================================================
+   CONFIG PERSISTENCE
+   ===================================================================== */
+function loadConf(){
+  try{
+    const raw = localStorage.getItem(LS_CONF);
+    if(raw) Object.assign(S.conf, JSON.parse(raw));
+  }catch(e){}
+}
+function saveConf(){ localStorage.setItem(LS_CONF, JSON.stringify(S.conf)); }
+
+/* =====================================================================
+   STORE LAYER
+   Two interchangeable implementations behind one interface:
+     init() / create() / patch() / remove()
+   Both call render() when data lands, from either local action or a
+   remote realtime event.
+   ===================================================================== */
+
+/* ---------- A. LOCAL STORE: cross-tab realtime via BroadcastChannel ---- */
+const LocalStore = {
+  name: "local",
+  chan: null,
+
+  async init(){
+    this.read();
+    if(!S.activities.length) this.seed();
+    try{
+      this.chan = new BroadcastChannel("ourspace");
+      this.chan.onmessage = (ev)=>{
+        if(ev.data && ev.data.type === "sync"){
+          this.read();
+          render();
+          flashLive();
+        }
+      };
+    }catch(e){ /* Safari private mode, etc. — degrade quietly */ }
+    // Fallback for browsers without BroadcastChannel: storage events.
+    window.addEventListener("storage", (e)=>{
+      if(e.key === LS_DATA){ this.read(); render(); flashLive(); }
+    });
+    setLive(true, "TAB-SYNC");
+  },
+
+  read(){
+    try{
+      const raw = localStorage.getItem(LS_DATA);
+      if(raw){
+        const d = JSON.parse(raw);
+        S.activities = d.activities || [];
+        S.logs = d.logs || {};
+      }
+    }catch(e){}
+  },
+  write(){
+    localStorage.setItem(LS_DATA, JSON.stringify({ activities:S.activities, logs:S.logs }));
+    try{ this.chan && this.chan.postMessage({type:"sync"}); }catch(e){}
+  },
+
+  log(activityId, action_type, details, actor){
+    (S.logs[activityId] = S.logs[activityId] || []).push({
+      id: uid(), user_id: actor ?? S.conf.me, action_type, details, timestamp: new Date().toISOString()
+    });
+  },
+
+  async create(a){
+    const row = Object.assign({
+      id: uid(), created_by: S.conf.me, created_at: new Date().toISOString(),
+      description:"", image_url:null, date_time:null, all_day:false
+    }, a);
+    S.activities.push(row);
+    this.log(row.id, "created",
+      row.date_time ? `created the plan “${row.title}”` : `added the idea “${row.title}”`);
+    if(row.date_time){
+      this.log(row.id, "scheduled", `set it for ${describeDT(row.date_time)}`);
+    }
+    this.write(); render();
+    return row;
+  },
+
+  async patch(id, changes){
+    const a = S.activities.find(x=>x.id===id);
+    if(!a) return;
+    const before = Object.assign({}, a);
+    Object.assign(a, changes);
+
+    if(before.date_time !== a.date_time){
+      if(!before.date_time)      this.log(id,"scheduled",   `moved this onto the calendar for ${describeDT(a.date_time)}`);
+      else if(!a.date_time)      this.log(id,"unscheduled", `sent this back to the bucket list`);
+      else                       this.log(id,"rescheduled", `moved it to ${describeDT(a.date_time)}`);
+    }
+    if(before.title !== a.title)             this.log(id,"edited", `renamed it to “${a.title}”`);
+    if(before.description !== a.description) this.log(id,"edited", `updated the notes`);
+    if(before.image_url !== a.image_url)     this.log(id,"edited", `changed the cover`);
+
+    this.write(); render();
+  },
+
+  async remove(id){
+    S.activities = S.activities.filter(x=>x.id!==id);
+    delete S.logs[id];
+    this.write(); render();
+  },
+
+  seed(){
+    const now = Date.now();
+    const mk = (title, desc, dt, by, back)=>{
+      const id = uid();
+      S.activities.push({
+        id, title, description:desc, image_url:null, created_by:by,
+        date_time:dt, all_day:!dt || dt.length<=10,
+        created_at:new Date(now - back).toISOString()
+      });
+      S.logs[id] = [{ id:uid(), user_id:by, action_type:"created",
+        details: dt ? `created the plan “${title}”` : `added the idea “${title}”`,
+        timestamp:new Date(now - back).toISOString() }];
+      if(dt){
+        S.logs[id].push({ id:uid(), user_id:by, action_type:"scheduled",
+          details:`set it for ${describeDT(dt)}`, timestamp:new Date(now - back + 60000).toISOString() });
+      }
+      return id;
+    };
+    const plus = (n, t)=>{ const d=new Date(); d.setDate(d.getDate()+n); return t ? iso(d)+"T"+t : iso(d); };
+
+    mk("Toronto Harbour Cruise", "Golden hour, the one with the open top deck.", null, 0, 864e5*6);
+    mk("Kayak the Grand River", "Rent doubles. Pack the dry bag this time.", null, 1, 864e5*5);
+    mk("Banff, properly", "Five days minimum. Lake Louise at sunrise.", null, 1, 864e5*4);
+    mk("Learn to make proper jollof", "Your aunt's recipe, no shortcuts.", null, 0, 864e5*3);
+    mk("Iron Horse Trail, end to end", "", null, 0, 864e5*2);
+    mk("Asake, whenever he tours", "Set a ticket alert.", null, 1, 864e5*1);
+    mk("Dinner at the Italian place", "Booked under my name, 8pm.", plus(0,"20:00"), 1, 864e5*3);
+    mk("Movie night — her pick", "", plus(2,"19:30"), 0, 864e5*2);
+    mk("Farmers market + slow morning", "", plus(5), 1, 864e5*1);
+    mk("Long drive, no destination", "", plus(-4,"11:00"), 0, 864e5*8);
+    this.write();
+  }
+};
+
+/* ---------- B. SUPABASE STORE: real multi-device realtime ------------- */
+const SupabaseStore = {
+  name: "supabase",
+  client: null,
+  spaceId: null,
+  profiles: {},   // uuid -> {display_name}
+
+  async init(){
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    this.client = createClient(S.conf.sbUrl, S.conf.sbKey, { realtime:{ params:{ eventsPerSecond:20 } } });
+    this.spaceId = S.conf.sbSpace;
+
+    const { data:{ session } } = await this.client.auth.getSession();
+    if(!session) throw new Error("Sign in required — no active Supabase session.");
+    this.uid = session.user.id;
+
+    // Profiles let us render "Aline scheduled this" instead of a uuid.
+    const { data:profs } = await this.client.from("profiles").select("id,display_name");
+    (profs||[]).forEach(p=> this.profiles[p.id] = p);
+
+    await this.fetchAll();
+
+    this.client
+      .channel(`space:${this.spaceId}`)
+      .on("postgres_changes",
+        { event:"*", schema:"public", table:"activities", filter:`space_id=eq.${this.spaceId}` },
+        (payload)=>{
+          if(payload.eventType === "DELETE"){
+            S.activities = S.activities.filter(a=>a.id !== payload.old.id);
+          } else {
+            const row = normalize(payload.new);
+            const i = S.activities.findIndex(a=>a.id === row.id);
+            if(i >= 0) S.activities[i] = row; else S.activities.push(row);
+          }
+          render(); flashLive();
+        })
+      .on("postgres_changes",
+        { event:"INSERT", schema:"public", table:"audit_logs", filter:`space_id=eq.${this.spaceId}` },
+        (payload)=>{
+          const l = payload.new;
+          (S.logs[l.activity_id] = S.logs[l.activity_id] || []).push(l);
+          if(S.detailId === l.activity_id) renderDetail();
+          flashLive();
+        })
+      .subscribe((status)=>{
+        setLive(status === "SUBSCRIBED", status === "SUBSCRIBED" ? "LIVE" : "…");
+      });
+
+    const self = this;
+    function normalize(r){
+      return {
+        id:r.id, title:r.title, description:r.description, image_url:r.image_url,
+        created_by:r.created_by, all_day:r.all_day,
+        // Postgres timestamptz -> the compact local form the UI works in.
+        date_time: r.date_time ? toLocalDT(r.date_time, r.all_day) : null,
+        created_at:r.created_at
+      };
+    }
+    this.normalize = normalize;
+  },
+
+  async fetchAll(){
+    const { data:acts, error } = await this.client
+      .from("activities").select("*").eq("space_id", this.spaceId).order("created_at",{ascending:false});
+    if(error) throw error;
+    S.activities = (acts||[]).map(this.normalize);
+
+    const { data:logs } = await this.client
+      .from("audit_logs").select("*").eq("space_id", this.spaceId).order("timestamp",{ascending:true});
+    S.logs = {};
+    (logs||[]).forEach(l=> (S.logs[l.activity_id] = S.logs[l.activity_id]||[]).push(l));
+    render();
+  },
+
+  async create(a){
+    const { error } = await this.client.from("activities").insert({
+      space_id: this.spaceId,
+      title: a.title,
+      description: a.description || null,
+      image_url: a.image_url || null,
+      created_by: this.uid,
+      date_time: a.date_time ? toTimestamptz(a.date_time) : null,
+      all_day: !a.date_time || a.date_time.length <= 10
+    });
+    if(error){ toast(error.message); throw error; }
+    // No optimistic push: the realtime INSERT event is the source of truth.
+  },
+
+  async patch(id, changes){
+    const patch = {};
+    if("title" in changes)       patch.title = changes.title;
+    if("description" in changes) patch.description = changes.description;
+    if("image_url" in changes)   patch.image_url = changes.image_url;
+    if("date_time" in changes){
+      patch.date_time = changes.date_time ? toTimestamptz(changes.date_time) : null;
+      patch.all_day   = !changes.date_time || changes.date_time.length <= 10;
+    }
+    const { error } = await this.client.from("activities").update(patch).eq("id", id);
+    if(error) toast(error.message);
+  },
+
+  async remove(id){
+    const { error } = await this.client.from("activities").delete().eq("id", id);
+    if(error) toast(error.message);
+  },
+
+  displayName(uuid){
+    const p = this.profiles[uuid];
+    return p ? p.display_name : "Someone";
+  }
+};
+
+function toTimestamptz(local){
+  // "2026-08-04"  -> midnight local ; "2026-08-04T19:30" -> that local time
+  const d = local.length <= 10 ? new Date(local+"T00:00:00") : new Date(local);
+  return d.toISOString();
+}
+function toLocalDT(ts, allDay){
+  const d = new Date(ts);
+  const base = iso(d);
+  return allDay ? base : `${base}T${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+function describeDT(dt){
+  if(!dt) return "";
+  const d = parseISO(dtDate(dt));
+  const t = dtTime(dt);
+  return `${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}${t ? " at "+pretty(t) : ""}`;
+}
+
+let store = LocalStore;
+
+/* ---------- who did what (works in both modes) ---------- */
+function actorName(log){
+  if(store.name === "supabase") return store.displayName(log.user_id);
+  return nameOf(typeof log.user_id === "number" ? log.user_id : 0);
+}
+function creatorName(a){
+  if(store.name === "supabase") return store.displayName(a.created_by);
+  return nameOf(a.created_by);
+}
+function creatorIndex(a){
+  if(store.name === "supabase") return a.created_by === store.uid ? 0 : 1;
+  return a.created_by;
+}
+
+/* =====================================================================
+   LIVE BADGE
+   ===================================================================== */
+function setLive(on, label){
+  S.live = on;
+  const b = $("#liveBadge");
+  b.classList.toggle("on", on);
+  $("#liveText").textContent = label || (on ? "LIVE" : "LOCAL");
+}
+let flashT;
+function flashLive(){
+  const b = $("#liveBadge");
+  b.classList.add("flash");
+  clearTimeout(flashT);
+  flashT = setTimeout(()=> b.classList.remove("flash"), 700);
+}
+
+/* =====================================================================
+   RENDER — BUCKET LIST
+   ===================================================================== */
+function renderBoard(){
+  const ideas = S.activities.filter(a=>!isPlan(a))
+    .sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+
+  const board = $("#board");
+  if(!ideas.length){
+    board.innerHTML = `<div class="blank">
+      <p>Things you both want to do, before they have a date.</p>
+      <button type="button" data-make>Add the first one</button>
+    </div>`;
+    return;
+  }
+  board.innerHTML = ideas.map((a,i)=>{
+    const art = a.image_url
+      ? `<div class="art" style="background-image:url('${a.image_url.replace(/'/g,"%27")}')"></div>`
+      : `<div class="mono">${artFor(a.title)}</div>`;
+    return `
+    <article class="idea rise" style="--i:${i}; background:${tintFor(a.id)}" data-open="${a.id}">
+      ${art}
+      <div class="veil"></div>
+      <div class="stamp"><i></i>${esc(creatorName(a))}</div>
+      <button class="sched" data-sched="${a.id}">Schedule</button>
+      <div class="body">
+        <h3>${esc(a.title)}</h3>
+        <div class="foot">${a.description ? esc(a.description).slice(0,46) : "No date yet"}</div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+/* =====================================================================
+   RENDER — CALENDAR
+   ===================================================================== */
+function plansByDate(){
+  const map = {};
+  S.activities.filter(isPlan).forEach(a=>{
+    const d = dtDate(a.date_time);
+    (map[d] = map[d] || []).push(a);
+  });
+  return map;
+}
+function externalByDate(){
+  const map = {};
+  S.external.forEach(e=> (map[e.date] = map[e.date] || []).push(e));
+  return map;
+}
+
+function renderCalendar(){
+  const c = S.cursor;
+  const plans = plansByDate();
+  const ext   = externalByDate();
+  $("#monthLabel").textContent = `${MONTHS[c.getMonth()]} ${c.getFullYear()}`;
+
+  const first = new Date(c.getFullYear(), c.getMonth(), 1);
+  const start = first.getDay();
+  const dim   = new Date(c.getFullYear(), c.getMonth()+1, 0).getDate();
+  const dimPrev = new Date(c.getFullYear(), c.getMonth(), 0).getDate();
+  const today = todayISO();
+  if(!S.picked) S.picked = today;
+
+  const cells = [];
+  for(let i=0;i<start;i++) cells.push({n:dimPrev-start+1+i, out:true});
+  for(let d=1;d<=dim;d++)  cells.push({n:d, out:false, d:iso(new Date(c.getFullYear(), c.getMonth(), d))});
+  while(cells.length % 7) cells.push({n:"", out:true});
+
+  $("#days").innerHTML = cells.map(cell=>{
+    if(cell.out) return `<div class="day out"><span class="num">${cell.n}</span></div>`;
+    const mine = plans[cell.d] || [];
+    const theirs = ext[cell.d] || [];
+    const marks = [
+      ...mine.slice(0,3).map(()=>`<i></i>`),
+      ...theirs.slice(0,2).map(()=>`<i class="ext"></i>`)
+    ].join("");
+    const cls = ["day"];
+    if(cell.d === today)     cls.push("now");
+    if(cell.d === S.picked)  cls.push("pick");
+    return `<div class="${cls.join(" ")}" data-day="${cell.d}">
+      <span class="num">${cell.n}</span>
+      <span class="marks">${marks}</span>
+    </div>`;
+  }).join("");
+
+  renderAgenda(plans, ext);
+}
+
+function renderAgenda(plans, ext){
+  plans = plans || plansByDate();
+  ext   = ext   || externalByDate();
+  const day = S.picked;
+  const d = parseISO(day);
+  const isToday = day === todayISO();
+
+  $("#dayLabel").innerHTML =
+    `<span>${isToday ? "Today" : DAYS[d.getDay()]}, ${MON3[d.getMonth()]} ${d.getDate()}</span>
+     <span class="line"></span>
+     <button id="addOnDay" title="Add a plan on this day">+</button>`;
+
+  const mine = (plans[day]||[]).slice().sort((a,b)=> (dtTime(a.date_time)||"99").localeCompare(dtTime(b.date_time)||"99"));
+  const theirs = (ext[day]||[]).slice().sort((a,b)=> (a.time||"99").localeCompare(b.time||"99"));
+
+  if(!mine.length && !theirs.length){
+    $("#agendaList").innerHTML = `<div class="blank">
+      <p>Nothing planned for this day.</p>
+      <button type="button" data-make>Plan something</button>
+    </div>`;
+    return;
+  }
+
+  const rows = [];
+  mine.forEach((a,i)=>{
+    const t = dtTime(a.date_time);
+    rows.push(`
+      <div class="entry rise" style="--i:${i}" data-open="${a.id}" draggable="true" data-drag="${a.id}">
+        <div class="swatch"></div>
+        <div class="when">${t ? pretty(t) : "All day"}</div>
+        <div class="what">
+          <h4>${esc(a.title)}</h4>
+          ${a.description ? `<p>${esc(a.description)}</p>` : ""}
+          <div class="who">${esc(creatorName(a))} · ours</div>
+        </div>
+      </div>`);
+  });
+  theirs.forEach((e,i)=>{
+    rows.push(`
+      <div class="entry external rise" style="--i:${mine.length+i}">
+        <div class="swatch"></div>
+        <div class="when">${e.time ? pretty(e.time) : "All day"}</div>
+        <div class="what">
+          <h4>${esc(e.title)}<span class="tag">read only</span></h4>
+          <div class="who">${esc(e.calendar || "Google Calendar")}</div>
+        </div>
+      </div>`);
+  });
+  $("#agendaList").innerHTML = rows.join("");
+}
+
+/* =====================================================================
+   RENDER — DETAIL + HISTORY
+   ===================================================================== */
+function renderDetail(){
+  const a = S.activities.find(x=>x.id===S.detailId);
+  if(!a){ $("#detailVeil").classList.remove("open"); return; }
+
+  const logs = (S.logs[a.id]||[]).slice().sort((x,y)=> new Date(x.timestamp)-new Date(y.timestamp));
+  const plan = isPlan(a);
+  const d = plan ? parseISO(dtDate(a.date_time)) : null;
+  const t = plan ? dtTime(a.date_time) : null;
+
+  $("#detailSheet").innerHTML = `
+    <div class="grip"></div>
+    <div class="eyebrow">${plan ? "On the calendar" : "On the bucket list"}</div>
+    <h3 contenteditable="true" id="dTitle" spellcheck="false">${esc(a.title)}</h3>
+
+    ${plan ? `
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;">
+        <span class="chip on accent" style="cursor:default;">
+          ${DAYS[d.getDay()].slice(0,3)} · ${MON3[d.getMonth()]} ${d.getDate()}${t ? " · "+pretty(t) : " · all day"}
+        </span>
+        <button class="chip" id="dRe">Move</button>
+        <button class="chip" id="dUnschedule">Back to list</button>
+      </div>` : `
+      <div style="margin-top:14px;">
+        <button class="chip accent on" id="dSchedule">Pick a date →</button>
+      </div>`}
+
+    <span class="lab">Notes</span>
+    <textarea class="inp" id="dDesc" placeholder="Anything worth remembering…">${esc(a.description||"")}</textarea>
+
+    <span class="lab">Cover</span>
+    <div id="dCoverWrap"></div>
+    <div class="gifbar" id="dGifBar">
+      <input class="inp" id="dGif" type="text" placeholder="Find a GIF or Image…" autocomplete="off">
+      <span class="spin" aria-hidden="true"></span>
+    </div>
+    <div class="gifstrip" id="dGifStrip"></div>
+    <div class="gifmsg" id="dGifMsg" style="display:none;"></div>
+    <div class="gifnote">
+      <span>Powered by GIPHY</span>
+      <span id="dGifSuggest" role="button" tabindex="0">Suggest from title</span>
+    </div>
+
+    <div class="rowbtns">
+      <button class="btn danger" id="dDelete">Delete</button>
+      <button class="btn solid" id="dSave">Save</button>
+    </div>
+
+    <div class="history">
+      <div class="cap">History</div>
+      <ul class="tl">
+        ${logs.map((l,i)=>`
+          <li class="${l.action_type==="created"||l.action_type==="scheduled" ? "key":""}" style="--i:${i}">
+            <div class="act"><b>${esc(actorName(l))}</b> ${esc(l.details || l.action_type)}</div>
+            <span class="stamp">${stamp(l.timestamp)}</span>
+          </li>`).join("")}
+      </ul>
+    </div>`;
+
+  $("#detailVeil").classList.add("open");
+  wireDetail(a);
+}
+
+function wireDetail(a){
+  const save = async ()=>{
+    const title = $("#dTitle").textContent.trim();
+    const desc  = $("#dDesc").value.trim();
+    const patch = {};
+    if(title && title !== a.title) patch.title = title;
+    if(desc !== (a.description||"")) patch.description = desc;
+    // null  = untouched      "" = explicitly removed      url = chosen
+    if(S.gifChoice !== null){
+      const next = S.gifChoice || null;
+      if(next !== (a.image_url || null)) patch.image_url = next;
+    }
+    if(Object.keys(patch).length) await store.patch(a.id, patch);
+    S.gifChoice = null;
+    $("#detailVeil").classList.remove("open");
+    toast("Saved");
+  };
+
+  $("#dSave").onclick = save;
+  $("#dDelete").onclick = async ()=>{
+    await store.remove(a.id);
+    $("#detailVeil").classList.remove("open");
+    toast("Deleted");
+  };
+  const sch = $("#dSchedule"), re = $("#dRe"), un = $("#dUnschedule");
+  if(sch) sch.onclick = ()=>{ $("#detailVeil").classList.remove("open"); openPicker(a.id); };
+  if(re)  re.onclick  = ()=>{ $("#detailVeil").classList.remove("open"); openPicker(a.id); };
+  if(un)  un.onclick  = async ()=>{
+    await store.patch(a.id, { date_time:null });
+    $("#detailVeil").classList.remove("open");
+    toast("Back on the bucket list");
+  };
+  Giphy.mount(a);
+}
+
+/* =====================================================================
+   GIPHY PICKER
+   Debounced search, trending as the resting state, and a strip that
+   collapses the moment you choose something. Every failure path leaves
+   the layout exactly as tall as it was — a dead API must not make the
+   form jump.
+   ===================================================================== */
+const Giphy = {
+  DEBOUNCE: 300,
+  LIMIT: 15,
+  timer: null,
+  ctrl: null,       // AbortController for the in-flight request
+  lastQuery: null,
+  ns: "d",          // id prefix — "d" = item sheet, "mk" = create sheet
+  titleOf: ()=>"",
+  onChange: ()=>{},
+  value: null,
+
+  el(suffix){ return $(`#${this.ns}${suffix}`); },
+
+  /* Where the request goes. With Supabase configured this is the Edge
+     Function, and the real key never touches the browser. Without it we
+     fall back to Giphy's public beta key so the picker still works in
+     demo mode — that key is public by definition, which is exactly why
+     it isn't yours. */
+  endpoint(action, q){
+    if(store.name === "supabase" && S.conf.sbUrl){
+      const u = new URL(`${S.conf.sbUrl.replace(/\/$/,"")}/functions/v1/giphy`);
+      u.searchParams.set("action", action);
+      u.searchParams.set("limit", String(this.LIMIT));
+      if(q) u.searchParams.set("q", q);
+      return { url:u.toString(), headers:{ Authorization:`Bearer ${S.conf.sbKey}` }, proxied:true };
+    }
+    const base = action === "search"
+      ? "https://api.giphy.com/v1/gifs/search"
+      : "https://api.giphy.com/v1/gifs/trending";
+    const u = new URL(base);
+    u.searchParams.set("api_key", GIPHY_KEY);
+    u.searchParams.set("limit", String(this.LIMIT));
+    u.searchParams.set("rating", "pg-13");
+    if(q) u.searchParams.set("q", q);
+    return { url:u.toString(), headers:{}, proxied:false };
+  },
+
+  mount(opts){
+    this.ns       = opts.ns || "d";
+    this.titleOf  = opts.titleOf  || (()=>"");
+    this.onChange = opts.onChange || (()=>{});
+    this.value    = opts.initial ?? null;
+    this.lastQuery = null;
+    clearTimeout(this.timer);
+    if(this.ctrl) this.ctrl.abort();
+    this.renderCover(this.value);
+
+    const input = this.el("Gif");
+    if(!input) return;
+    input.value = "";
+    this.el("GifStrip").innerHTML = "";
+    this.message(null);
+
+    input.addEventListener("input", ()=>{
+      clearTimeout(this.timer);
+      const q = input.value.trim();
+      // 300ms of quiet before we spend a request.
+      this.timer = setTimeout(()=> this.load(q ? "search" : "trending", q), this.DEBOUNCE);
+    });
+    // Tapping an empty field is a request for ideas, not a blank box.
+    input.addEventListener("focus", ()=>{
+      if(!input.value.trim() && !this.lastQuery) this.load("trending", "");
+    });
+
+    this.el("GifStrip").onclick = (e)=>{
+      const img = e.target.closest("img"); if(!img) return;
+      this.choose(img.dataset.full);
+    };
+    this.el("GifSuggest").onclick = ()=>{
+      const t = (this.titleOf() || "").trim();
+      if(!t){ this.message("Give it a title first."); return; }
+      input.value = t;
+      this.load("search", t);
+    };
+  },
+
+  async load(action, q){
+    const strip = this.el("GifStrip"), bar = this.el("GifBar");
+    if(!strip || !bar) return;
+
+    // Cancel whatever is still in flight — an old response arriving late
+    // must never overwrite a newer query's results.
+    if(this.ctrl) this.ctrl.abort();
+    this.ctrl = new AbortController();
+    const mine = this.ctrl;
+
+    this.lastQuery = q;
+    bar.classList.add("loading");
+    this.message(null);
+
+    if(!navigator.onLine){
+      bar.classList.remove("loading");
+      this.message("You're offline — GIFs will load when you're back.", ()=> this.load(action, q));
+      return;
+    }
+
+    try{
+      const { url, headers } = this.endpoint(action, q);
+      const res = await fetch(url, { headers, signal:mine.signal });
+
+      if(res.status === 429){
+        throw Object.assign(new Error("rate"), { kind:"rate" });
+      }
+      if(res.status === 501){
+        throw Object.assign(new Error("cfg"), { kind:"cfg" });
+      }
+      if(!res.ok) throw Object.assign(new Error("http"), { kind:"http" });
+
+      const body = await res.json();
+      if(mine.signal.aborted) return;
+
+      // The proxy returns {items}; raw Giphy returns {data}. Accept both.
+      const items = body.items
+        ? body.items
+        : (body.data||[]).map(g=>({
+            id:g.id, title:g.title||"",
+            preview:(g.images.fixed_height_small || g.images.preview_gif || g.images.downsized || g.images.fixed_height)?.url,
+            full:(g.images.downsized || g.images.fixed_height || g.images.original)?.url
+          })).filter(g=>g.preview && g.full);
+
+      bar.classList.remove("loading");
+
+      if(!items.length){
+        strip.innerHTML = "";
+        this.message(q ? `Nothing for “${q}”. Try another word.` : "No GIFs came back.");
+        return;
+      }
+
+      strip.innerHTML = items.map((g,i)=>
+        `<img src="${g.preview}" data-full="${g.full}" alt="${esc(g.title).slice(0,60)}"
+              loading="lazy" style="--i:${i}"
+              class="${this.value === g.full ? "on":""}">`
+      ).join("");
+      strip.scrollLeft = 0;
+
+    }catch(err){
+      if(err.name === "AbortError") return;   // superseded, not a failure
+      bar.classList.remove("loading");
+      strip.innerHTML = "";
+      const copy = {
+        rate: "Giphy's rate limit is hit. Give it a minute.",
+        cfg:  "GIPHY_API_KEY isn't set on the server yet.",
+        http: "Giphy returned an error.",
+      }[err.kind] || "Couldn't reach Giphy.";
+      this.message(copy, err.kind === "cfg" ? null : ()=> this.load(action, q));
+    }
+  },
+
+  message(text, retry){
+    const msg = this.el("GifMsg"); if(!msg) return;
+    if(!text){ msg.style.display = "none"; msg.innerHTML = ""; return; }
+    msg.style.display = "flex";
+    msg.innerHTML = `<span>${esc(text)}</span>` +
+      (retry ? `<button class="retry" type="button">Retry</button>` : "");
+    const b = msg.querySelector(".retry");
+    if(b) b.onclick = retry;
+  },
+
+  choose(url){
+    S.gifChoice = url;
+    this.value = url;
+    this.renderCover(url);
+    // Selection collapses the browser — the choice is made, get out of the way.
+    const strip = this.el("GifStrip"); if(strip) strip.innerHTML = "";
+    this.message(null);
+    const input = this.el("Gif"); if(input) input.blur();
+    this.lastQuery = null;
+    this.onChange(url);
+  },
+
+  renderCover(url){
+    const wrap = this.el("CoverWrap"); if(!wrap) return;
+    if(!url){ wrap.innerHTML = ""; return; }
+    const ns = this.ns;
+    wrap.innerHTML = `
+      <div class="cover">
+        <img src="${url}" alt="Selected cover">
+        <div class="shade"></div>
+        <div class="tools">
+          <button class="tool" type="button" id="${ns}CoverChange">Change</button>
+          <button class="tool danger" type="button" id="${ns}CoverClear">Remove</button>
+        </div>
+      </div>`;
+    $(`#${ns}CoverChange`).onclick = ()=>{
+      const input = this.el("Gif");
+      if(input){ input.focus(); }
+      this.load(input && input.value.trim() ? "search" : "trending", input ? input.value.trim() : "");
+    };
+    $(`#${ns}CoverClear`).onclick = ()=>{
+      S.gifChoice = "";           // "" means "cleared", distinct from null "untouched"
+      this.value = "";
+      this.renderCover(null);
+      this.onChange("");
+    };
+  }
+};
+
+/* =====================================================================
+   DATE PICKER
+   ===================================================================== */
+function openPicker(id){
+  S.pickId = id;
+  const a = S.activities.find(x=>x.id===id);
+  S.pickDate = a && isPlan(a) ? dtDate(a.date_time) : (S.picked || todayISO());
+  S.pickCursor = parseISO(S.pickDate);
+  $("#pickTitle").textContent = a ? a.title : "";
+  $("#pickTime").value = (a && isPlan(a) && dtTime(a.date_time)) || "";
+  renderQuickDates();
+  renderQuickTimes();
+  renderMini();
+  $("#pickVeil").classList.add("open");
+}
+
+function renderQuickDates(){
+  const now = new Date();
+  const mk = (n)=>{ const d = new Date(); d.setDate(d.getDate()+n); return iso(d); };
+  const dow = now.getDay();
+  const satOffset = (6 - dow + 7) % 7 || 7;
+  const opts = [
+    ["Tonight",        mk(0)],
+    ["Tomorrow",       mk(1)],
+    ["This weekend",   mk(satOffset)],
+    ["Next weekend",   mk(satOffset+7)],
+    ["In a month",     mk(30)],
+  ];
+  $("#quickDates").innerHTML = opts.map(([l,v])=>
+    `<button class="chip accent ${v===S.pickDate?"on":""}" data-qdate="${v}">${l}</button>`).join("");
+}
+function renderQuickTimes(){
+  const cur = $("#pickTime").value;
+  const opts = [["Morning","09:00"],["Lunch","12:30"],["Evening","18:30"],["Late","21:00"]];
+  $("#quickTimes").innerHTML = opts.map(([l,v])=>
+    `<button class="chip ${v===cur?"on":""}" data-qtime="${v}">${l}</button>`).join("");
+}
+function renderMini(){
+  const c = S.pickCursor;
+  $("#miniLabel").textContent = `${MONTHS[c.getMonth()]} ${c.getFullYear()}`;
+  const first = new Date(c.getFullYear(), c.getMonth(), 1);
+  const start = first.getDay();
+  const dim = new Date(c.getFullYear(), c.getMonth()+1, 0).getDate();
+  const dimPrev = new Date(c.getFullYear(), c.getMonth(), 0).getDate();
+  const today = todayISO();
+
+  const cells = [];
+  for(let i=0;i<start;i++) cells.push({n:dimPrev-start+1+i, out:true});
+  for(let d=1;d<=dim;d++)  cells.push({n:d, out:false, d:iso(new Date(c.getFullYear(), c.getMonth(), d))});
+  while(cells.length % 7) cells.push({n:"", out:true});
+
+  $("#miniDays").innerHTML = cells.map(cell=>{
+    if(cell.out) return `<div class="mday out">${cell.n}</div>`;
+    const cls = ["mday"];
+    if(cell.d===today) cls.push("now");
+    if(cell.d===S.pickDate) cls.push("on");
+    return `<div class="${cls.join(" ")}" data-mday="${cell.d}">${cell.n}</div>`;
+  }).join("");
+}
+
+/* =====================================================================
+   GOOGLE CALENDAR — READ ONLY
+   ===================================================================== */
+const GCal = {
+  token: null,
+
+  async connect(){
+    const clientId = S.conf.gcalId && S.conf.gcalId.trim();
+    if(!clientId){ toast("Add a Google client ID first"); return; }
+    await loadScript("https://accounts.google.com/gsi/client");
+    const tc = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "https://www.googleapis.com/auth/calendar.readonly",
+      callback: async (resp)=>{
+        if(resp.error){ toast("Google declined the request"); return; }
+        this.token = resp.access_token;
+        await this.fetch();
+        $("#gcalTitle").textContent = "Linked — read only";
+        toast("Google Calendar linked");
+      }
+    });
+    tc.requestAccessToken();
+  },
+
+  async fetch(){
+    if(!this.token) return;
+    const min = new Date(); min.setMonth(min.getMonth()-1);
+    const max = new Date(); max.setMonth(max.getMonth()+3);
+    const url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+      + `?timeMin=${min.toISOString()}&timeMax=${max.toISOString()}`
+      + "&singleEvents=true&orderBy=startTime&maxResults=250";
+    const r = await fetch(url, { headers:{ Authorization:`Bearer ${this.token}` } });
+    if(!r.ok){ toast("Couldn't read Google Calendar"); return; }
+    const j = await r.json();
+    S.external = (j.items||[]).map(ev=>{
+      const startDate = ev.start.date || (ev.start.dateTime||"").slice(0,10);
+      const startTime = ev.start.dateTime ? new Date(ev.start.dateTime) : null;
+      return {
+        id: ev.id,
+        title: ev.summary || "(busy)",
+        date: startDate,
+        time: startTime ? `${String(startTime.getHours()).padStart(2,"0")}:${String(startTime.getMinutes()).padStart(2,"0")}` : null,
+        calendar: "Google"
+      };
+    });
+    render();
+  },
+
+  demo(){
+    const mk = (n,t,title)=>{ const d=new Date(); d.setDate(d.getDate()+n); return {id:"x"+n+t, title, date:iso(d), time:t, calendar:"Google · work"}; };
+    S.external = [
+      mk(0,"10:00","Standup"),
+      mk(1,"14:00","1:1 with Dami"),
+      mk(2,"09:30","Dentist"),
+      mk(2,"16:00","Design review"),
+      mk(5,"11:00","Sprint planning"),
+      mk(6,null,"Mum's birthday"),
+      mk(9,"07:15","Flight YYZ → LOS"),
+    ];
+    $("#gcalTitle").textContent = "Sample events shown";
+    render();
+    toast("Sample Google events overlaid");
+  }
+};
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector(`script[src="${src}"]`)) return res();
+    const s = document.createElement("script");
+    s.src = src; s.async = true; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+/* =====================================================================
+   WEB PUSH — native W3C, no SDK
+   Four states the UI has to tell apart, because they need four
+   different sentences:
+     unsupported  — browser/context can't do it at all (incl. iOS Safari
+                    that hasn't been added to the Home Screen)
+     default      — never asked
+     granted      — allowed at the OS level; may or may not be subscribed
+     denied       — blocked; the prompt will never appear again, so the
+                    only honest thing is to say "go to browser settings"
+   ===================================================================== */
+const Push = {
+  reg: null,
+  sub: null,
+
+  supported(){
+    return typeof window !== "undefined"
+      && "serviceWorker" in navigator
+      && "PushManager" in window
+      && "Notification" in window;
+  },
+
+  // iOS only exposes push to installed PWAs. Detecting this early is the
+  // difference between "your browser can't" and a prompt that never fires.
+  iosNeedsInstall(){
+    const iOS = /iP(hone|ad|od)/.test(navigator.userAgent || "");
+    // matchMedia is missing in some embedded webviews — never let a
+    // capability probe be the thing that throws.
+    const displayStandalone = typeof window.matchMedia === "function"
+      && window.matchMedia("(display-mode: standalone)").matches;
+    const standalone = window.navigator.standalone === true || displayStandalone;
+    return iOS && !standalone;
+  },
+
+  async register(){
+    if(!this.supported()) return null;
+    try{
+      this.reg = await navigator.serviceWorker.register("./sw.js", { scope:"./" });
+      this.sub = await this.reg.pushManager.getSubscription();
+      return this.reg;
+    }catch(err){
+      console.warn("SW registration failed:", err);
+      return null;
+    }
+  },
+
+  state(){
+    if(!this.supported())        return this.iosNeedsInstall() ? "ios-install" : "unsupported";
+    if(Notification.permission === "denied")  return "denied";
+    if(Notification.permission === "granted") return this.sub ? "on" : "granted-idle";
+    return "default";
+  },
+
+  async enable(){
+    if(!this.supported()){ toast("This browser can't do web push"); return; }
+
+    const perm = await Notification.requestPermission();
+    if(perm !== "granted"){
+      renderBell();
+      toast(perm === "denied" ? "Blocked — turn it on in browser settings" : "Not now");
+      return;
+    }
+    if(!this.reg) await this.register();
+    if(!this.reg){ toast("Service worker unavailable"); renderBell(); return; }
+
+    const key = (S.conf.vapid||"").trim();
+    if(!key){
+      // Permission is granted, so local banners work even with no server.
+      renderBell();
+      toast("Allowed. Add a VAPID key to receive them from your partner.");
+      return;
+    }
+
+    try{
+      this.sub = await this.reg.pushManager.subscribe({
+        userVisibleOnly: true,                       // required by Chrome
+        applicationServerKey: urlB64ToUint8Array(key)
+      });
+      await this.persist(this.sub);
+      renderBell();
+      toast("Notifications on");
+    }catch(err){
+      console.error(err);
+      renderBell();
+      toast("Couldn't subscribe — check the VAPID key");
+    }
+  },
+
+  async disable(){
+    try{
+      if(this.sub){
+        const endpoint = this.sub.endpoint;
+        await this.sub.unsubscribe();
+        await this.forget(endpoint);
+        this.sub = null;
+      }
+    }catch(err){ console.warn(err); }
+    renderBell();
+    toast("Notifications off");
+  },
+
+  // Store the subscription so the Edge Function can find this device.
+  async persist(sub){
+    if(store.name !== "supabase") return;   // demo mode has no server to tell
+    const j = sub.toJSON();
+    await store.client.from("push_subscriptions").upsert({
+      user_id:    store.uid,
+      space_id:   store.spaceId,
+      endpoint:   j.endpoint,
+      p256dh:     j.keys.p256dh,
+      auth:       j.keys.auth,
+      user_agent: navigator.userAgent.slice(0,180),
+      last_seen:  new Date().toISOString()
+    }, { onConflict:"endpoint" });
+  },
+
+  async forget(endpoint){
+    if(store.name !== "supabase") return;
+    await store.client.from("push_subscriptions").delete().eq("endpoint", endpoint);
+  },
+
+  // Called on boot: if the OS says granted but our row is missing or the
+  // endpoint rotated, quietly repair it rather than going silent.
+  async sync(){
+    if(!this.supported() || Notification.permission !== "granted") return;
+    if(!this.reg) await this.register();
+    if(!this.reg) return;
+    const key = (S.conf.vapid||"").trim();
+    if(!key) return;
+    try{
+      if(!this.sub){
+        this.sub = await this.reg.pushManager.subscribe({
+          userVisibleOnly:true, applicationServerKey:urlB64ToUint8Array(key)
+        });
+      }
+      await this.persist(this.sub);
+    }catch(err){ console.warn("push sync:", err); }
+  },
+
+  async preview(){
+    if(!this.supported()){ toast("This browser can't show notifications"); return; }
+    if(Notification.permission !== "granted"){ await this.enable(); }
+    if(Notification.permission !== "granted") return;
+    if(!this.reg) await this.register();
+    const body = `${nameOf(S.conf.me===0?1:0)} locked in a date for Kayak the Grand River!`;
+    if(this.reg && this.reg.active){
+      this.reg.active.postMessage({ type:"preview-notification", title:"📅 Our Space", body });
+    } else if(this.reg){
+      this.reg.showNotification("📅 Our Space", { body, icon:"./icon-192.png", badge:"./badge-96.png", tag:"ourspace-preview" });
+    }
+    toast("Banner sent");
+  }
+};
+
+function urlB64ToUint8Array(base64String){
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+function renderBell(){
+  const el = $("#bell"); if(!el) return;
+  const knob = $("#bellKnob");
+  const st = Push.state();
+  const copy = {
+    "on":            ["Buzzing",          "You'll hear about locked-in dates and note changes.", "ON"],
+    "granted-idle":  ["Allowed",          "Permission granted. Add a VAPID key to finish the link.", "NEEDS KEY"],
+    "default":       ["Buzz me",          "When a date gets locked in, or notes change.", "OFF"],
+    "denied":        ["Blocked",          "Your browser is refusing notifications for this site. Re-allow it in site settings, then come back.", "BLOCKED"],
+    "ios-install":   ["Add to Home Screen","iOS only delivers push to installed apps. Share → Add to Home Screen, then open it from there.", "NEEDS INSTALL"],
+    "unsupported":   ["Not available",    "This browser doesn't support the Web Push API.", "UNSUPPORTED"],
+  }[st];
+
+  $("#bellTitle").textContent = copy[0];
+  $("#bellCopy").textContent  = copy[1];
+  $("#bellState").innerHTML   = st === "on" ? "STATUS · <b>ON</b>" : `STATUS · ${copy[2]}`;
+  el.classList.toggle("on", st === "on");
+  el.classList.toggle("blocked", st === "denied" || st === "unsupported" || st === "ios-install");
+  knob.disabled = (st === "denied" || st === "unsupported" || st === "ios-install");
+}
+
+/* Service worker messages: deep-link taps and rotated subscriptions. */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.addEventListener("message", async (ev)=>{
+    const m = ev.data || {};
+    if(m.type === "notification-click" && m.activityId){
+      const a = S.activities.find(x=>x.id === m.activityId);
+      if(a){ S.detailId = a.id; S.gifChoice = null; renderDetail(); }
+    }
+    if(m.type === "subscription-change" && m.subscription){
+      // The push service moved us. Swap the stored row for the new endpoint.
+      if(store.name === "supabase"){
+        if(m.oldEndpoint) await Push.forget(m.oldEndpoint);
+        Push.sub = await Push.reg?.pushManager.getSubscription();
+        if(Push.sub) await Push.persist(Push.sub);
+      }
+      renderBell();
+    }
+  });
+}
+
+/* =====================================================================
+   MASTER RENDER
+   ===================================================================== */
+function render(){
+  $("#pairFaces").innerHTML = [0,1].map(i=>
+    `<span class="face ${S.conf.me===i?"":"dim"}" style="background:${faceColor(i)}" data-face="${i}" title="${esc(nameOf(i))}">${esc((nameOf(i)[0]||"?").toUpperCase())}</span>`
+  ).join("");
+  renderBoard();
+  renderCalendar();
+  if(S.detailId && $("#detailVeil").classList.contains("open")) renderDetail();
+}
+
+/* =====================================================================
+   EVENTS
+   ===================================================================== */
+// tabs
+function showScreen(name){
+  S.screen = name;
+  $$(".dock-tab").forEach(x=> x.classList.toggle("on", x.dataset.screen === name));
+  $$(".screen").forEach(s=> s.classList.toggle("on", s.id === "screen-"+name));
+}
+$$(".dock-tab").forEach(b=>{ b.onclick = ()=> showScreen(b.dataset.screen); });
+
+/* ---------- create sheet ----------
+   One sheet for both states. Leaving the date alone makes an idea;
+   picking one makes a plan. Same single field the model turns on. */
+function renderMkDates(){
+  const rel = (n)=>{ const d = new Date(); d.setDate(d.getDate()+n); return iso(d); };
+  const satOffset = (6 - new Date().getDay() + 7) % 7 || 7;
+  const opts = [
+    ["Someday",      null],
+    ["Tonight",      rel(0)],
+    ["Tomorrow",     rel(1)],
+    ["This weekend", rel(satOffset)],
+  ];
+  $("#mkDates").innerHTML =
+    opts.map(([l,v])=>
+      `<button class="chip accent ${v===S.mkDate?"on":""}" type="button" data-mkdate="${v ?? ""}">${l}</button>`
+    ).join("") +
+    `<button class="chip ${S.mkPickOpen?"on":""}" type="button" data-mkpick>Pick a day…</button>`;
+
+  const plan = !!S.mkDate;
+  $("#mkEyebrow").textContent = plan ? "New plan" : "New idea";
+  $("#mkSave").textContent    = plan ? "Put it on the calendar" : "Add to our ideas";
+}
+function renderMkMini(){
+  const c = S.mkCursor;
+  $("#mkLabel").textContent = `${MONTHS[c.getMonth()]} ${c.getFullYear()}`;
+  const start   = new Date(c.getFullYear(), c.getMonth(), 1).getDay();
+  const dim     = new Date(c.getFullYear(), c.getMonth()+1, 0).getDate();
+  const dimPrev = new Date(c.getFullYear(), c.getMonth(), 0).getDate();
+  const today   = todayISO();
+
+  const cells = [];
+  for(let i=0;i<start;i++) cells.push({n:dimPrev-start+1+i, out:true});
+  for(let d=1;d<=dim;d++)  cells.push({n:d, out:false, d:iso(new Date(c.getFullYear(), c.getMonth(), d))});
+  while(cells.length % 7) cells.push({n:"", out:true});
+
+  $("#mkDays").innerHTML = cells.map(cell=>{
+    if(cell.out) return `<div class="mday out">${cell.n}</div>`;
+    const cls = ["mday"];
+    if(cell.d===today)    cls.push("now");
+    if(cell.d===S.mkDate) cls.push("on");
+    return `<div class="${cls.join(" ")}" data-mkday="${cell.d}">${cell.n}</div>`;
+  }).join("");
+}
+function openMake(){
+  S.mkDate = null;
+  S.mkCursor = new Date();
+  S.mkPickOpen = false;
+  S.gifChoice = null;
+  $("#mkTitle").value = "";
+  $("#mkNotes").value = "";
+  $("#mkTime").value  = "";
+  $("#mkWhenExtra").style.display = "none";
+  renderMkDates();
+  renderMkMini();
+  Giphy.mount({ ns:"mk", titleOf: ()=> $("#mkTitle").value, initial:null });
+  $("#makeVeil").classList.add("open");
+  setTimeout(()=> $("#mkTitle").focus(), 280);
+}
+function closeMake(){ $("#makeVeil").classList.remove("open"); }
+
+$("#makeBtn").onclick = openMake;
+$("#mkCancel").onclick = closeMake;
+$("#makeVeil").addEventListener("click", (e)=>{ if(e.target.id === "makeVeil") closeMake(); });
+
+$("#mkDates").addEventListener("click", (e)=>{
+  if(e.target.closest("[data-mkpick]")){
+    S.mkPickOpen = !S.mkPickOpen;
+    $("#mkWhenExtra").style.display = S.mkPickOpen ? "" : "none";
+    renderMkDates();
+    return;
+  }
+  const c = e.target.closest("[data-mkdate]"); if(!c) return;
+  S.mkDate = c.dataset.mkdate || null;
+  if(S.mkDate) S.mkCursor = parseISO(S.mkDate);
+  renderMkDates(); renderMkMini();
+});
+$("#mkPrev").onclick = ()=>{ S.mkCursor = new Date(S.mkCursor.getFullYear(), S.mkCursor.getMonth()-1, 1); renderMkMini(); };
+$("#mkNext").onclick = ()=>{ S.mkCursor = new Date(S.mkCursor.getFullYear(), S.mkCursor.getMonth()+1, 1); renderMkMini(); };
+$("#mkDays").addEventListener("click", (e)=>{
+  const c = e.target.closest("[data-mkday]"); if(!c) return;
+  S.mkDate = c.dataset.mkday;
+  renderMkMini(); renderMkDates();
+});
+$("#mkTitle").addEventListener("keydown", (e)=>{ if(e.key === "Enter") $("#mkSave").click(); });
+
+$("#mkSave").onclick = async ()=>{
+  const title = $("#mkTitle").value.trim();
+  if(!title){ toast("Give it a name"); $("#mkTitle").focus(); return; }
+  const time = $("#mkTime").value;
+  const date_time = S.mkDate ? (time ? `${S.mkDate}T${time}` : S.mkDate) : null;
+  await store.create({
+    title,
+    description: $("#mkNotes").value.trim(),
+    image_url: S.gifChoice || null,
+    date_time
+  });
+  closeMake();
+  if(date_time){
+    S.picked = S.mkDate;
+    S.cursor = parseISO(S.mkDate);
+    showScreen("calendar");
+    renderCalendar();
+  }
+  toast(date_time ? "It's on the calendar" : "Added to your ideas");
+};
+
+// month nav
+$("#prevMonth").onclick = ()=>{ S.cursor = new Date(S.cursor.getFullYear(), S.cursor.getMonth()-1, 1); renderCalendar(); };
+$("#nextMonth").onclick = ()=>{ S.cursor = new Date(S.cursor.getFullYear(), S.cursor.getMonth()+1, 1); renderCalendar(); };
+$("#todayBtn").onclick = ()=>{ S.cursor = new Date(); S.picked = todayISO(); renderCalendar(); };
+
+// day select + drag-to-reschedule
+$("#days").addEventListener("click", (e)=>{
+  const cell = e.target.closest(".day");
+  if(!cell || !cell.dataset.day) return;
+  S.picked = cell.dataset.day;
+  renderCalendar();
+});
+let dragId = null;
+document.addEventListener("dragstart", (e)=>{
+  const row = e.target.closest("[data-drag]");
+  if(!row) return;
+  dragId = row.dataset.drag;
+  e.dataTransfer.effectAllowed = "move";
+  try{ e.dataTransfer.setData("text/plain", dragId); }catch(err){}
+});
+$("#days").addEventListener("dragover", (e)=>{
+  const cell = e.target.closest(".day");
+  if(!cell || !cell.dataset.day || !dragId) return;
+  e.preventDefault();
+  $$(".day.drop").forEach(d=>d.classList.remove("drop"));
+  cell.classList.add("drop");
+});
+$("#days").addEventListener("drop", async (e)=>{
+  const cell = e.target.closest(".day");
+  $$(".day.drop").forEach(d=>d.classList.remove("drop"));
+  if(!cell || !cell.dataset.day || !dragId) return;
+  e.preventDefault();
+  const a = S.activities.find(x=>x.id===dragId);
+  const t = a ? dtTime(a.date_time) : null;
+  await store.patch(dragId, { date_time: t ? `${cell.dataset.day}T${t}` : cell.dataset.day });
+  S.picked = cell.dataset.day;
+  dragId = null;
+  toast("Moved");
+});
+
+// open detail / schedule from cards + agenda + add-on-day
+document.addEventListener("click", (e)=>{
+  const sched = e.target.closest("[data-sched]");
+  if(sched){ e.stopPropagation(); openPicker(sched.dataset.sched); return; }
+
+  // Adding onto a specific day opens the same sheet as everywhere else,
+  // with that day already chosen. A browser prompt() was the one piece
+  // of borrowed UI in the app.
+  const add = e.target.closest("#addOnDay");
+  if(add){
+    openMake();
+    S.mkDate = S.picked;
+    S.mkCursor = parseISO(S.picked);
+    renderMkDates(); renderMkMini();
+    return;
+  }
+
+  if(e.target.closest("[data-make]")){ openMake(); return; }
+
+  const face = e.target.closest("[data-face]");
+  if(face){ openSettings(); return; }
+
+  const open = e.target.closest("[data-open]");
+  if(open){ S.detailId = open.dataset.open; S.gifChoice = null; renderDetail(); return; }
+});
+
+// picker
+$("#pickVeil").addEventListener("click", (e)=>{ if(e.target.id === "pickVeil") $("#pickVeil").classList.remove("open"); });
+$("#pickCancel").onclick = ()=> $("#pickVeil").classList.remove("open");
+$("#miniPrev").onclick = ()=>{ S.pickCursor = new Date(S.pickCursor.getFullYear(), S.pickCursor.getMonth()-1, 1); renderMini(); };
+$("#miniNext").onclick = ()=>{ S.pickCursor = new Date(S.pickCursor.getFullYear(), S.pickCursor.getMonth()+1, 1); renderMini(); };
+$("#miniDays").addEventListener("click", (e)=>{
+  const c = e.target.closest("[data-mday]"); if(!c) return;
+  S.pickDate = c.dataset.mday; renderMini(); renderQuickDates();
+});
+$("#quickDates").addEventListener("click", (e)=>{
+  const c = e.target.closest("[data-qdate]"); if(!c) return;
+  S.pickDate = c.dataset.qdate;
+  S.pickCursor = parseISO(S.pickDate);
+  renderQuickDates(); renderMini();
+});
+$("#quickTimes").addEventListener("click", (e)=>{
+  const c = e.target.closest("[data-qtime]"); if(!c) return;
+  $("#pickTime").value = (c.classList.contains("on")) ? "" : c.dataset.qtime;
+  renderQuickTimes();
+});
+$("#pickTime").addEventListener("input", renderQuickTimes);
+$("#pickConfirm").onclick = async ()=>{
+  if(!S.pickDate){ toast("Pick a day"); return; }
+  const t = $("#pickTime").value;
+  await store.patch(S.pickId, { date_time: t ? `${S.pickDate}T${t}` : S.pickDate });
+  $("#pickVeil").classList.remove("open");
+  S.picked = S.pickDate;
+  S.cursor = parseISO(S.pickDate);
+  // Land the user on the calendar so the move is visible, not just asserted.
+  showScreen("calendar");
+  renderCalendar();
+  toast("It's on the calendar");
+};
+
+// detail veil dismiss
+$("#detailVeil").addEventListener("click", (e)=>{ if(e.target.id === "detailVeil"){ $("#detailVeil").classList.remove("open"); S.detailId = null; } });
+
+/* ---------- settings ---------- */
+function openSettings(){
+  $("#nameA").value = S.conf.names[0];
+  $("#nameB").value = S.conf.names[1];
+  $("#sbUrl").value = S.conf.sbUrl;
+  $("#sbKey").value = S.conf.sbKey;
+  $("#sbSpace").value = S.conf.sbSpace;
+  $("#gcalId").value = S.conf.gcalId;
+  $("#vapidKey").value = S.conf.vapid;
+  $("#whoAmI").innerHTML = [0,1].map(i=>
+    `<button class="chip accent ${S.conf.me===i?"on":""}" data-me="${i}">${esc(nameOf(i))}</button>`).join("");
+  $("#sbState").textContent = store.name === "supabase"
+    ? "Connected — syncing live across devices."
+    : "Not connected — running on local demo sync.";
+  renderBell();
+  $("#setVeil").classList.add("open");
+}
+$("#liveBadge").onclick = openSettings;
+$("#setVeil").addEventListener("click", (e)=>{ if(e.target.id === "setVeil") $("#setVeil").classList.remove("open"); });
+$("#setDone").onclick = ()=>{
+  S.conf.names[0] = $("#nameA").value.trim() || "Me";
+  S.conf.names[1] = $("#nameB").value.trim() || "You";
+  S.conf.gcalId = $("#gcalId").value.trim();
+  S.conf.vapid  = $("#vapidKey").value.trim();
+  saveConf(); render();
+  $("#setVeil").classList.remove("open");
+};
+
+// notification toggle
+$("#bellKnob").onclick = ()=>{
+  S.conf.vapid = $("#vapidKey").value.trim();
+  saveConf();
+  if(Push.state() === "on") Push.disable(); else Push.enable();
+};
+$("#bellPreview").onclick = ()=> Push.preview();
+$("#whoAmI").addEventListener("click", (e)=>{
+  const b = e.target.closest("[data-me]"); if(!b) return;
+  S.conf.me = Number(b.dataset.me);
+  saveConf();
+  $$("#whoAmI .chip").forEach(c=> c.classList.toggle("on", c===b));
+  render();
+});
+$("#sbSave").onclick = async ()=>{
+  S.conf.sbUrl = $("#sbUrl").value.trim();
+  S.conf.sbKey = $("#sbKey").value.trim();
+  S.conf.sbSpace = $("#sbSpace").value.trim();
+  saveConf();
+  if(!S.conf.sbUrl || !S.conf.sbKey || !S.conf.sbSpace){ toast("All three fields are needed"); return; }
+  try{
+    store = SupabaseStore;
+    await store.init();
+    $("#sbState").textContent = "Connected — syncing live across devices.";
+    toast("Supabase connected");
+  }catch(err){
+    console.error(err);
+    store = LocalStore;
+    await store.init();
+    toast(err.message || "Couldn't connect — staying local");
+  }
+};
+$("#sbClear").onclick = async ()=>{
+  S.conf.sbUrl = S.conf.sbKey = S.conf.sbSpace = "";
+  saveConf();
+  $("#sbUrl").value = $("#sbKey").value = $("#sbSpace").value = "";
+  store = LocalStore;
+  await store.init();
+  render();
+  toast("Back to local demo mode");
+};
+$("#gcalConnect").onclick = ()=>{ S.conf.gcalId = $("#gcalId").value.trim(); saveConf(); GCal.connect(); };
+$("#gcalDemo").onclick = ()=> GCal.demo();
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+(async function boot(){
+  loadConf();
+  if(S.conf.sbUrl && S.conf.sbKey && S.conf.sbSpace){
+    try{ store = SupabaseStore; await store.init(); }
+    catch(err){ console.warn("Supabase init failed, using local:", err); store = LocalStore; await store.init(); }
+  } else {
+    await store.init();
+  }
+  S.picked = todayISO();
+  render();
+
+  // Push comes up after the UI, never before it — a permission prompt
+  // must be the consequence of a tap, not of a page load.
+  await Push.register();
+  await Push.sync();
+  renderBell();
+
+  // Deep link from a notification tap: index.html#a=<activity id>
+  const hash = location.hash.match(/a=([\w-]+)/);
+  if(hash){
+    const a = S.activities.find(x=>x.id === hash[1]);
+    if(a){ S.detailId = a.id; renderDetail(); }
+  }
+})();
+
+})();
+</script>
+</body>
+</html>

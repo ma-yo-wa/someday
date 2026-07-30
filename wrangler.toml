@@ -1,0 +1,9 @@
+# Cloudflare Pages. The dashboard can also set these; this file documents
+# the build so nobody has to guess. Repo / project name: someday
+name = "someday"
+compatibility_date = "2026-07-01"
+pages_build_output_dir = "dist"
+
+[vars]
+# Non-secret defaults only. Put VITE_SUPABASE_* in the Pages dashboard
+# (Settings → Environment variables) so they aren't committed.

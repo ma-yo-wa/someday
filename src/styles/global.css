@@ -1,0 +1,176 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  /* The grey flash on tap is the loudest browser tell there is. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  /* Stops the whole document rubber-banding under the fixed chrome. */
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+
+  /* Chrome is furniture: you can't select it, drag it, or long-press it
+     into a callout menu. Anything that is actually content opts back in
+     via .selectable below. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+
+  /* The orb, unwrapped across the viewport: rose bloom behind the
+     masthead, greens pushed out to the edges, peach pooling at the
+     bottom. Same order the avatar runs in, centre to rim. */
+  background:
+    radial-gradient(
+      88% 46% at 50% -10%,
+      rgba(253, 134, 150, 0.4) 0%,
+      rgba(253, 164, 146, 0.2) 44%,
+      transparent 74%
+    ),
+    radial-gradient(64% 40% at 104% 16%, rgba(205, 231, 179, 0.52) 0%, transparent 62%),
+    radial-gradient(64% 42% at -6% 30%, rgba(214, 222, 170, 0.44) 0%, transparent 64%),
+    radial-gradient(130% 56% at 50% 114%, rgba(240, 194, 150, 0.34) 0%, transparent 66%),
+    var(--paper);
+  background-attachment: fixed;
+}
+
+/* Paper grain. Non-interactive, sits over everything. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.36'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Same orb, held far back. At full strength these pastels glow against
+     black and the text on top stops being readable. */
+  body {
+    background:
+      radial-gradient(
+        88% 46% at 50% -10%,
+        rgba(253, 134, 150, 0.17) 0%,
+        rgba(253, 164, 146, 0.08) 44%,
+        transparent 74%
+      ),
+      radial-gradient(64% 40% at 104% 16%, rgba(205, 231, 179, 0.1) 0%, transparent 62%),
+      radial-gradient(64% 42% at -6% 30%, rgba(214, 222, 170, 0.08) 0%, transparent 64%),
+      radial-gradient(130% 56% at 50% 114%, rgba(240, 194, 150, 0.07) 0%, transparent 66%),
+      var(--paper);
+    background-attachment: fixed;
+  }
+
+  /* Multiply on a near-black ground just paints black on black. */
+  body::after {
+    mix-blend-mode: overlay;
+    opacity: 0.24;
+  }
+}
+
+/* Text the user wrote is content, and content is selectable. */
+.selectable {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 16px floor on anything focusable: below it, iOS Safari zooms the page
+   in on focus, which instantly breaks the illusion of a native app. */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+/* iOS shows focus rings only for keyboard users, never for touch. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+/* Momentum scrolling, and a scroller that doesn't hand its overscroll
+   up to the page behind it. */
+.scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

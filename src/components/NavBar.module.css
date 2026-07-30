@@ -1,0 +1,178 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  padding-top: var(--safe-t);
+}
+
+/* The material and its hairline only exist once content has gone under
+   the bar. At the top of a screen an iOS nav bar is invisible. */
+.material {
+  position: absolute;
+  inset: 0;
+  background: var(--mat-regular-bg);
+  -webkit-backdrop-filter: var(--mat-regular);
+  backdrop-filter: var(--mat-regular);
+  border-bottom: var(--hairline-w) solid var(--hairline);
+  opacity: 0;
+  transition: opacity 0.22s var(--ease-ios);
+  pointer-events: none;
+}
+
+.materialOn {
+  opacity: 1;
+}
+
+/* 44pt. Not a number to improvise on — it's the height every iOS bar
+   has, and the eye knows it. */
+.bar {
+  position: relative;
+  height: 44px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 0 max(12px, var(--safe-l)) 0 max(12px, var(--safe-r));
+}
+
+.leading {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+}
+
+.trailing {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: end;
+}
+
+.compactTitle {
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+  color: var(--ink);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.large {
+  position: relative;
+  padding: 0 20px 6px;
+  transform-origin: left bottom;
+}
+
+.largeTitle {
+  font: var(--t-large-title);
+  letter-spacing: var(--tr-large-title);
+  color: var(--ink);
+}
+
+/* ---- bar buttons ---- */
+
+.action {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  border: none;
+  background: none;
+  color: var(--rose-ink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-capsule);
+  transition: opacity 0.15s var(--ease-ios);
+}
+
+.action:active {
+  opacity: 0.4;
+}
+
+.action svg {
+  width: 20px;
+  height: 20px;
+}
+
+.action:disabled {
+  opacity: 0.3;
+}
+
+.todayPill {
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--r-capsule);
+  background: var(--fill-tertiary);
+  color: var(--rose-ink);
+  font: var(--t-footnote);
+  font-weight: 600;
+  letter-spacing: var(--tr-footnote);
+  cursor: pointer;
+}
+
+.todayPill:active {
+  opacity: 0.5;
+}
+
+/* ---- avatars ---- */
+
+.who {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: transform 0.14s var(--ease-ios);
+}
+
+.who:active {
+  transform: scale(0.92);
+}
+
+.face {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: var(--t-caption);
+  font-weight: 600;
+  color: #fffdfb;
+  border: 2px solid var(--paper);
+}
+
+.face + .face {
+  margin-left: -11px;
+}
+
+.dim {
+  filter: saturate(0.25) opacity(0.55);
+}
+
+/* The empty seat. Dashed, no fill — visibly waiting for someone. */
+.empty {
+  background: transparent;
+  border: 1.5px dashed var(--ink-faint);
+  color: var(--ink-faint);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.bulb {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  border: 2px solid var(--paper);
+}
+
+.bulbOn {
+  background: var(--rose);
+}

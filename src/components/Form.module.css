@@ -1,0 +1,266 @@
+/* A grouped-list header: uppercase, small, quiet, and above the group
+   rather than inside it. */
+.label {
+  display: block;
+  font: var(--t-footnote);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-faint);
+  margin: 24px 0 8px;
+}
+
+.hint {
+  text-transform: none;
+  letter-spacing: var(--tr-footnote);
+  font-weight: 400;
+}
+
+/* Inset grouped list. iOS fields sit in a filled, rounded container, not
+   on an underline — the underline is an Android pattern. */
+.group {
+  background: var(--fill-quaternary);
+  border-radius: var(--r-control);
+  overflow: hidden;
+}
+
+.group > * + * {
+  border-top: var(--hairline-w) solid var(--separator);
+}
+
+.input {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 12px 14px;
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--ink);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--ink-faint);
+}
+
+textarea.input {
+  resize: none;
+  min-height: 74px;
+  display: block;
+}
+
+/* A settings row: label on the left, control hard against the right. */
+.listRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 14px;
+  min-height: 46px;
+}
+
+.rowLabel {
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+}
+
+.rowNote {
+  margin-top: 8px;
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  color: var(--ink-faint);
+  padding: 0 4px;
+}
+
+/* iOS segmented control: a filled track with a sliding white knob under
+   the selected label. */
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--fill-tertiary);
+  border-radius: 10px;
+}
+
+.segment {
+  flex: 1;
+  position: relative;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font: var(--t-subhead);
+  letter-spacing: var(--tr-subhead);
+  font-weight: 500;
+  color: var(--ink-2);
+  transition: color 0.18s var(--ease-ios);
+}
+
+.segmentOn {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.segmentKnob {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: var(--paper-warm);
+  box-shadow:
+    0 1px 3px rgba(23, 20, 15, 0.14),
+    0 0 0 var(--hairline-w) rgba(23, 20, 15, 0.04);
+}
+
+/* Above the knob, which slides underneath it. */
+.segmentLabel {
+  position: relative;
+}
+
+/* iOS switch: 51×31pt, knob 27pt. */
+.switch {
+  flex: none;
+  width: 51px;
+  height: 31px;
+  border-radius: var(--r-capsule);
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  background: var(--fill-secondary);
+  display: flex;
+  transition: background-color 0.24s var(--ease-ios);
+}
+
+.switchOn {
+  background: var(--sage-ink);
+}
+
+.switchKnob {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    0 1px 1px rgba(0, 0, 0, 0.16);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: none;
+  background: var(--fill-tertiary);
+  color: var(--ink-2);
+  border-radius: var(--r-capsule);
+  cursor: pointer;
+  font: var(--t-subhead);
+  letter-spacing: var(--tr-subhead);
+  font-weight: 600;
+  padding: 9px 15px;
+  transition:
+    transform 0.14s var(--ease-ios),
+    background-color 0.18s var(--ease-ios),
+    color 0.18s var(--ease-ios);
+}
+
+.chip:active {
+  transform: scale(0.95);
+}
+
+.chipOn {
+  background: var(--rose);
+  color: #17140f;
+}
+
+.chipNeutralOn {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+/* 50pt tall. Apple's filled button is a capsule with a lot of vertical
+   room, and shrinking it is the quickest way to make a screen feel
+   cramped and webby. */
+.btn {
+  flex: 1;
+  border: none;
+  border-radius: var(--r-capsule);
+  cursor: pointer;
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+  padding: 15px 18px;
+  transition:
+    transform 0.14s var(--ease-ios),
+    opacity 0.14s var(--ease-ios);
+}
+
+.btn:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+.ghost {
+  background: var(--fill-tertiary);
+  color: var(--ink-2);
+}
+
+.accent {
+  background: var(--rose);
+  color: #17140f;
+}
+
+.solid {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.danger {
+  background: var(--rose-wash);
+  color: var(--rose-ink);
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn:disabled:active {
+  transform: none;
+}
+
+/* react-day-picker, restyled to match. The library gives us keyboard
+   handling, locale and range logic; the look stays ours. */
+.picker {
+  margin-top: 14px;
+  --rdp-accent-color: var(--rose);
+  --rdp-accent-background-color: var(--rose-wash);
+  --rdp-day-height: 40px;
+  --rdp-day-width: 40px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 36px;
+  --rdp-day_button-border-radius: 50%;
+  --rdp-selected-border: none;
+  --rdp-today-color: var(--rose-ink);
+  --rdp-font-family: var(--ui);
+  font-size: 14px;
+}
+
+.picker :global(.rdp-caption_label) {
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+}
+
+.picker :global(.rdp-selected .rdp-day_button) {
+  background: var(--rose);
+  color: #17140f;
+  font-weight: 600;
+}

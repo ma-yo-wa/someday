@@ -1,0 +1,339 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.dow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px 10px 4px;
+}
+
+.dow span {
+  text-align: center;
+  font: var(--t-caption2);
+  letter-spacing: var(--tr-caption2);
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 10px;
+}
+
+.day {
+  position: relative;
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  padding-top: 15px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: var(--t-callout);
+  letter-spacing: var(--tr-callout);
+  color: var(--ink);
+  transition: opacity 0.12s var(--ease-ios);
+}
+
+.day:active {
+  opacity: 0.5;
+}
+
+.outside {
+  color: var(--ink-faint);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* A multi-day event reads as a continuous band under the numbers, so a
+   trip looks like one thing instead of five unrelated days. */
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14px;
+  bottom: 6px;
+  background: var(--rose-wash);
+  z-index: 0;
+}
+
+.bandStart {
+  left: 3px;
+  border-radius: 10px 0 0 10px;
+}
+
+.bandEnd {
+  right: 3px;
+  border-radius: 0 10px 10px 0;
+}
+
+.bandOnly {
+  left: 3px;
+  right: 3px;
+  border-radius: 10px;
+}
+
+.num {
+  position: relative;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.isToday .num {
+  background: var(--rose);
+  color: #17140f;
+  font-weight: 600;
+}
+
+/* Selected day is an outline, not a fill — a fill would fight with
+   today's marker and with the multi-day band underneath. */
+.picked .num {
+  outline: 1.5px dashed var(--rose-ink);
+  outline-offset: 1px;
+}
+
+/* Glyphs sit above the number the way they do on a wall calendar. */
+.glyphs {
+  position: absolute;
+  top: 1px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 1px;
+  font-size: 13px;
+  line-height: 1;
+  height: 14px;
+  overflow: hidden;
+}
+
+.marks {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  align-items: center;
+}
+
+/* Solid = something you two agreed to. Hollow = somebody's imported
+   event. Shape reads before colour at this size. */
+.marks i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--rose-ink);
+}
+
+.marks i.ext {
+  background: none;
+  border: 1.5px solid currentColor;
+}
+
+/* ---------------- imported strip ---------------- */
+
+.busy {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 20px 2px;
+  scrollbar-width: none;
+}
+
+.busy::-webkit-scrollbar {
+  display: none;
+}
+
+.busyPill {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px 0 9px;
+  border-radius: var(--r-capsule);
+  border: var(--hairline-w) solid var(--hairline);
+  background: var(--mat-thin-bg);
+  -webkit-backdrop-filter: var(--mat-thin);
+  backdrop-filter: var(--mat-thin);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    transform 0.14s var(--ease-ios),
+    opacity 0.14s var(--ease-ios);
+}
+
+.busyPill:active {
+  transform: scale(0.95);
+  opacity: 0.7;
+}
+
+.busyWhen {
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.busyWho {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--paper-warm);
+}
+
+/* ---------------- agenda ---------------- */
+
+.agenda {
+  flex: 1;
+  margin-top: 14px;
+  padding: 14px max(20px, var(--safe-l)) calc(var(--safe-b) + 116px)
+    max(20px, var(--safe-r));
+  background: var(--mat-thin-bg);
+  -webkit-backdrop-filter: var(--mat-thin);
+  backdrop-filter: var(--mat-thin);
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  border-top: var(--hairline-w) solid var(--hairline);
+}
+
+.grip {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--fill-secondary);
+  margin: -4px auto 14px;
+}
+
+.dayLabel {
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+  margin-bottom: 10px;
+}
+
+/* An iOS list row: the separator starts where the text starts, not at
+   the edge of the screen, so the leading column reads as a gutter. */
+.entry {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 11px 0;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition: opacity 0.12s var(--ease-ios);
+}
+
+.entry:active {
+  opacity: 0.45;
+}
+
+.entry + .entry {
+  border-top: var(--hairline-w) solid var(--separator);
+}
+
+.glyph {
+  font-size: 27px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.title {
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+  display: block;
+}
+
+.range {
+  margin-top: 1px;
+  font: var(--t-subhead);
+  letter-spacing: var(--tr-subhead);
+  color: var(--ink-soft);
+}
+
+.note {
+  margin-top: 2px;
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  color: var(--ink-soft);
+}
+
+.meta {
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: var(--t-caption);
+  letter-spacing: var(--tr-caption);
+  color: var(--ink-soft);
+}
+
+.meta svg {
+  width: 12px;
+  height: 12px;
+}
+
+.avatar {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--paper-warm);
+}
+
+.blank {
+  padding: 26px 0 34px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.blank p {
+  font: var(--t-subhead);
+  letter-spacing: var(--tr-subhead);
+  color: var(--ink-soft);
+}
+
+.blank button {
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+  color: #17140f;
+  background: var(--rose);
+  border: none;
+  border-radius: var(--r-capsule);
+  padding: 12px 22px;
+  cursor: pointer;
+  transition:
+    transform 0.14s var(--ease-ios),
+    opacity 0.14s var(--ease-ios);
+}
+
+.blank button:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}

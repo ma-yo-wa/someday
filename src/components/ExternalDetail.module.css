@@ -1,0 +1,77 @@
+.body {
+  padding-bottom: 8px;
+}
+
+.head {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.glyph {
+  font-size: 34px;
+  line-height: 1;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.range {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  letter-spacing: -0.005em;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 0.5px solid var(--rule);
+  border-bottom: 0.5px solid var(--rule);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  color: var(--ink-2);
+  letter-spacing: -0.005em;
+}
+
+.row svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--ink-soft);
+}
+
+.avatar {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--paper-warm);
+}
+
+.foot {
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  letter-spacing: -0.005em;
+}

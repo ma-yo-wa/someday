@@ -1,0 +1,175 @@
+.head {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 4px;
+}
+
+.glyph {
+  font-size: 34px;
+  line-height: 1;
+  text-align: center;
+}
+
+.title {
+  font: var(--t-title2);
+  letter-spacing: var(--tr-title2);
+  text-wrap: balance;
+}
+
+.when {
+  margin-top: 3px;
+  font: var(--t-subhead);
+  letter-spacing: var(--tr-subhead);
+  color: var(--ink-soft);
+}
+
+.round {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: var(--fill-tertiary);
+  color: var(--ink-2);
+  transition:
+    transform 0.14s var(--ease-ios),
+    opacity 0.14s var(--ease-ios);
+}
+
+.round:active {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+.round svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-card);
+  background-size: cover;
+  background-position: center;
+  margin: 14px 0 4px;
+}
+
+.notes {
+  margin-top: 14px;
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+
+/* ---- action list ---- */
+
+.actions {
+  margin-top: 20px;
+  background: var(--fill-quaternary);
+  border-radius: var(--r-control);
+  overflow: hidden;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  transition: background-color 0.12s var(--ease-ios);
+}
+
+.action + .action {
+  border-top: var(--hairline-w) solid var(--separator);
+}
+
+.action:active {
+  background: var(--fill-tertiary);
+}
+
+.action svg {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  color: var(--ink-soft);
+}
+
+.destructive {
+  color: var(--rose-ink);
+}
+
+.destructive svg {
+  color: var(--rose-ink);
+}
+
+/* ---- history ---- */
+
+.historyHead {
+  display: block;
+  margin: 26px 0 10px;
+  font: var(--t-footnote);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 11px;
+  padding: 7px 0;
+  align-items: baseline;
+}
+
+.who {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fffdfb;
+  align-self: start;
+}
+
+.what {
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  color: var(--ink-2);
+}
+
+.ago {
+  color: var(--ink-faint);
+}
+
+/* ---- confirm ---- */
+
+.confirm {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: var(--r-control);
+  background: var(--rose-wash);
+}
+
+.confirmText {
+  font: var(--t-subhead);
+  letter-spacing: var(--tr-subhead);
+  color: var(--ink-2);
+  margin-bottom: 12px;
+}

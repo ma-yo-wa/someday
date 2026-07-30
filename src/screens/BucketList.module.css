@@ -1,0 +1,138 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  padding: 8px max(20px, var(--safe-l)) calc(var(--safe-b) + 116px)
+    max(20px, var(--safe-r));
+}
+
+.card {
+  position: relative;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  cursor: pointer;
+  isolation: isolate;
+  box-shadow: var(--shadow-card);
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: #fffdfb;
+  width: 100%;
+  transition:
+    transform 0.16s var(--ease-ios),
+    opacity 0.16s var(--ease-ios);
+}
+
+/* Cards press in slightly under the finger, the way a springboard icon
+   does. It's the cheapest signal that a thing is live. */
+.card:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  /* Only enough to seat the title. The tint underneath is already dark
+     at the bottom, so a full-card scrim would just grey it out. */
+  background: linear-gradient(
+    178deg,
+    rgba(23, 20, 15, 0) 34%,
+    rgba(23, 20, 15, 0.42) 100%
+  );
+}
+
+.body {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 13px;
+  z-index: 2;
+}
+
+.title {
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+  text-wrap: balance;
+}
+
+.foot {
+  margin-top: 5px;
+  font: var(--t-caption2);
+  letter-spacing: var(--tr-caption2);
+  color: rgba(255, 253, 251, 0.74);
+}
+
+.sched {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  z-index: 3;
+  border: none;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 253, 251, 0.92);
+  color: #17140f;
+  -webkit-backdrop-filter: var(--mat-thin);
+  backdrop-filter: var(--mat-thin);
+  transition: transform 0.14s var(--ease-ios);
+}
+
+.sched:active {
+  transform: scale(0.88);
+}
+
+.sched svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Empty states say what goes here and offer the action, rather than
+   drawing a dashed box around the absence of one. */
+.blank {
+  grid-column: 1 / -1;
+  padding: 56px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.blank p {
+  max-width: 26ch;
+  font: var(--t-subhead);
+  letter-spacing: var(--tr-subhead);
+  color: var(--ink-soft);
+}
+
+.blank button {
+  font: var(--t-headline);
+  letter-spacing: var(--tr-headline);
+  color: #17140f;
+  background: var(--rose);
+  border: none;
+  border-radius: var(--r-capsule);
+  padding: 12px 22px;
+  cursor: pointer;
+  transition:
+    transform 0.14s var(--ease-ios),
+    opacity 0.14s var(--ease-ios);
+}
+
+.blank button:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}

@@ -1,0 +1,61 @@
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* iOS sheet corners are large and only on the leading edge, and the sheet
+   itself is opaque — it's a card in front of the app, not another pane
+   of glass. Stacking blur on blur is what makes web sheets look muddy. */
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-warm);
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  padding: 6px max(20px, var(--safe-l)) calc(22px + var(--safe-b))
+    max(20px, var(--safe-r));
+  box-shadow: 0 -1px 0 var(--hairline);
+}
+
+.scroller {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* The grabber is the affordance that says "this drags". Without it a
+   sheet reads as a modal you have to find a button to close. */
+.grip {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--fill-secondary);
+  margin: 5px auto 14px;
+  flex: 0 0 auto;
+}
+
+.eyebrow {
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  font-weight: 600;
+  color: var(--ink-faint);
+  margin-bottom: 2px;
+}
+
+.heading {
+  font: var(--t-title2);
+  letter-spacing: var(--tr-title2);
+  margin-bottom: 2px;
+}

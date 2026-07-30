@@ -1,0 +1,135 @@
+/* The tab capsule stays centered. Create floats on its own — it's not a
+   place you go, so it doesn't belong in the bar that says where you are. */
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 max(16px, var(--safe-l)) calc(12px + var(--safe-b))
+    max(16px, var(--safe-r));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.inner {
+  pointer-events: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 52px;
+  padding: 0 6px;
+  border-radius: var(--r-capsule);
+  background: var(--mat-regular-bg);
+  -webkit-backdrop-filter: var(--mat-regular);
+  backdrop-filter: var(--mat-regular);
+  border: var(--hairline-w) solid var(--hairline);
+  box-shadow:
+    0 1px 1px rgba(23, 20, 15, 0.04),
+    0 12px 32px -14px rgba(23, 20, 15, 0.42);
+}
+
+.tab {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 42px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-faint);
+  transition: color 0.2s var(--ease-ios);
+}
+
+.tab:active {
+  opacity: 0.55;
+}
+
+.pill {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-capsule);
+  background: var(--fill-tertiary);
+}
+
+.icon {
+  position: relative;
+  display: block;
+  height: 23px;
+}
+
+.tab svg {
+  width: 23px;
+  height: 23px;
+  display: block;
+}
+
+.on {
+  color: var(--ink);
+}
+
+/* Twitter-style FAB: above the bar, hard against the right of the app
+   column — absolute inside the dock so desktop doesn't pin it to the
+   far edge of a wide window. */
+.make {
+  pointer-events: auto;
+  position: absolute;
+  right: max(16px, var(--safe-r));
+  bottom: calc(12px + var(--safe-b) + 64px);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    circle at 50% 44%,
+    #ff7396 0%,
+    var(--orb-rose) 22%,
+    var(--orb-coral) 46%,
+    var(--orb-peach) 66%,
+    var(--orb-green) 100%
+  );
+  box-shadow:
+    0 1px 2px rgba(23, 20, 15, 0.22),
+    0 14px 32px -10px rgba(242, 100, 139, 0.7),
+    inset 0 -1px 2px rgba(23, 20, 15, 0.12);
+}
+
+.plus {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+.plus::before,
+.plus::after {
+  content: '';
+  position: absolute;
+  background: #17140f;
+  border-radius: 2px;
+}
+
+.plus::before {
+  left: 50%;
+  top: 0;
+  width: 2.6px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.plus::after {
+  top: 50%;
+  left: 0;
+  height: 2.6px;
+  width: 100%;
+  transform: translateY(-50%);
+}

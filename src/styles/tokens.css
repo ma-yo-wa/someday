@@ -1,0 +1,211 @@
+/* =====================================================================
+   Someday — design tokens
+
+   The palette is sampled from the avatar: a soft orb running hot rose at
+   the core, out through coral and peach, to a pale green rim. The whole
+   sweep sits at roughly one lightness (L≈.77), which is what makes it
+   read as a glow rather than as a gradient. Two consequences shape
+   everything downstream:
+
+     1. These are pastels. None of them can carry white text, so anything
+        filled with an orb colour takes ink on top instead. The -ink
+        variants are the same hue pushed dark enough to be read as text.
+     2. The sweep has two ends, and the app has two states. Sage is an
+        Idea, rose is a Plan, and scheduling travels the gradient.
+   ===================================================================== */
+
+:root {
+  --paper: #f9f6f2;
+  --paper-warm: #fffdfb;
+  --paper-sunk: #efeae3;
+
+  --ink: #17140f;
+  --ink-2: #3b352c;
+  --ink-soft: #7c7365;
+  --ink-faint: #a79e90;
+  --rule: #e4dcd0;
+
+  /* the orb itself, sampled by radius — only ever used in real gradients */
+  --orb-rose: #fd8696;
+  --orb-coral: #fda492;
+  --orb-peach: #f0c296;
+  --orb-sand: #e1d4a0;
+  --orb-olive: #d6deaa;
+  --orb-green: #cde7b3;
+  --orb-mint: #d2eec8;
+
+  /* Rose = a Plan. Fills take ink, never white. */
+  --rose: #f2648b;
+  --rose-ink: #c4285a;
+  --rose-wash: #ffeaee;
+
+  /* Sage = an Idea. */
+  --sage: #a8ce85;
+  --sage-ink: #4f7735;
+  --sage-wash: #edf6e3;
+
+  /* external / read-only Google Calendar events */
+  --ext: #98917f;
+  --ext-wash: #ece7da;
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-sm: 9px;
+
+  --shadow-card: 0 1px 0 rgba(23, 20, 15, 0.05),
+    0 10px 26px -14px rgba(23, 20, 15, 0.35);
+  --shadow-lift: 0 2px 0 rgba(23, 20, 15, 0.05),
+    0 22px 44px -18px rgba(23, 20, 15, 0.42);
+
+  /* San Francisco on Apple devices via -apple-system; every other
+     platform resolves to its own native UI face. No webfont request, so
+     type still renders correctly with no network — which matters for an
+     installable PWA. --display and --ui are the same stack: on iOS the
+     two are separated by weight and optical size, not by family. */
+  --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui,
+    'Segoe UI', Roboto, sans-serif;
+  --ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui,
+    'Segoe UI', Roboto, sans-serif;
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* UIKit's default animation curve. Anything that moves in response to
+     a touch should use this one, so motion here matches motion in the
+     apps sitting next to it on the home screen. */
+  --ease-ios: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* ------------------------------------------------------------------
+     Type. Apple's ramp, in px against a 17px body — the sizes, leading
+     and tracking iOS actually ships, rather than a scale of our own.
+     Tracking is what gives it away: SF tightens as it grows and opens up
+     as it shrinks, so a fixed em value across the app reads wrong at
+     both ends.
+     ------------------------------------------------------------------ */
+  --t-large-title: 700 34px/41px var(--display);
+  --tr-large-title: -0.4px;
+
+  --t-title1: 700 28px/34px var(--display);
+  --tr-title1: -0.3px;
+
+  --t-title2: 700 22px/28px var(--display);
+  --tr-title2: -0.26px;
+
+  --t-title3: 600 20px/25px var(--display);
+  --tr-title3: -0.2px;
+
+  --t-headline: 600 17px/22px var(--ui);
+  --tr-headline: -0.43px;
+
+  --t-body: 400 17px/22px var(--ui);
+  --tr-body: -0.43px;
+
+  --t-callout: 400 16px/21px var(--ui);
+  --tr-callout: -0.32px;
+
+  --t-subhead: 400 15px/20px var(--ui);
+  --tr-subhead: -0.23px;
+
+  --t-footnote: 400 13px/18px var(--ui);
+  --tr-footnote: -0.08px;
+
+  --t-caption: 400 12px/16px var(--ui);
+  --tr-caption: 0px;
+
+  --t-caption2: 500 11px/13px var(--ui);
+  --tr-caption2: 0.06px;
+
+  /* ------------------------------------------------------------------
+     Materials. iOS chrome is never a flat fill — it's a blur of whatever
+     is behind it, with saturation pushed up so colour bleeds through.
+     The saturate() is the part people miss; without it the blur goes
+     grey and the whole thing reads like frosted glass on a website.
+     ------------------------------------------------------------------ */
+  --mat-thin: saturate(180%) blur(20px);
+  --mat-regular: saturate(180%) blur(30px);
+  --mat-thick: saturate(190%) blur(40px);
+
+  --mat-thin-bg: rgba(255, 253, 251, 0.62);
+  --mat-regular-bg: rgba(255, 253, 251, 0.76);
+  --mat-thick-bg: rgba(255, 253, 251, 0.9);
+
+  --hairline: rgba(23, 20, 15, 0.12);
+  --separator: rgba(23, 20, 15, 0.09);
+
+  /* Corner radii are concentric: a control inside a container is rounded
+     so the gap between the two curves stays even. */
+  --r-sheet: 38px;
+  --r-card: 20px;
+  --r-control: 12px;
+  --r-capsule: 999px;
+
+  --fill-quaternary: rgba(23, 20, 15, 0.045);
+  --fill-tertiary: rgba(23, 20, 15, 0.07);
+  --fill-secondary: rgba(23, 20, 15, 0.11);
+}
+
+/* =====================================================================
+   Dark. An app that stays bright when the phone goes dark is the single
+   loudest tell that it isn't native. The orb keeps its hues but loses
+   most of its lightness, because the same pastels over a dark ground
+   glare; the -ink variants swap direction and become the light ones.
+   ===================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0d0c0b;
+    --paper-warm: #1a1815;
+    --paper-sunk: #000000;
+
+    --ink: #f6f2ec;
+    --ink-2: #cdc6bb;
+    --ink-soft: #989184;
+    --ink-faint: #6b6459;
+    --rule: #302c26;
+
+    --rose: #f2648b;
+    --rose-ink: #ff9db5;
+    --rose-wash: #3a1a24;
+
+    --sage: #a8ce85;
+    --sage-ink: #bcdd9f;
+    --sage-wash: #1e2a17;
+
+    --ext: #8a8375;
+    --ext-wash: #24211c;
+
+    --mat-thin-bg: rgba(36, 33, 29, 0.62);
+    --mat-regular-bg: rgba(30, 27, 24, 0.76);
+    --mat-thick-bg: rgba(24, 22, 19, 0.9);
+
+    --hairline: rgba(255, 250, 242, 0.14);
+    --separator: rgba(255, 250, 242, 0.1);
+
+    --fill-quaternary: rgba(255, 250, 242, 0.06);
+    --fill-tertiary: rgba(255, 250, 242, 0.1);
+    --fill-secondary: rgba(255, 250, 242, 0.16);
+
+    --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.4), 0 10px 26px -14px rgba(0, 0, 0, 0.8);
+    --shadow-lift: 0 2px 0 rgba(0, 0, 0, 0.4), 0 22px 44px -18px rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* A hairline is one device pixel, so it has to get thinner as the screen
+   gets denser — 1px on a retina phone is a visibly heavy line. */
+:root {
+  --hairline-w: 1px;
+}
+
+@media (min-resolution: 2dppx) {
+  :root {
+    --hairline-w: 0.5px;
+  }
+}
+
+@media (min-resolution: 3dppx) {
+  :root {
+    --hairline-w: 0.33px;
+  }
+}
