@@ -13,7 +13,6 @@ export interface ExternalEventInput {
   sourceId: string;
   title: string | null;
   location: string | null;
-  description: string | null;
   startsAt: string;
   endsAt: string;
   allDay: boolean;

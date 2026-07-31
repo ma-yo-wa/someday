@@ -77,17 +77,6 @@
   overflow-wrap: anywhere;
 }
 
-.notes {
-  margin: 0;
-  padding: 0 0 0 26px;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink-2);
-  letter-spacing: -0.005em;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 .foot {
   margin-top: 14px;
   font-size: 13px;

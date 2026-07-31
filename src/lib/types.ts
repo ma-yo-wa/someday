@@ -50,7 +50,6 @@ export interface ExternalEvent {
   ownerId: string;
   title: string | null;
   location: string | null;
-  description: string | null;
   /** Local ISO: "YYYY-MM-DD" when all-day, else "YYYY-MM-DDTHH:MM". */
   startsAt: string;
   endsAt: string;

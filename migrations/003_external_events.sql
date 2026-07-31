@@ -13,7 +13,6 @@ create table if not exists public.external_events (
   source_id      text not null,
   title          text,
   location       text,
-  description    text,
   starts_at      timestamptz not null,
   ends_at        timestamptz not null,
   all_day        boolean not null default false,

@@ -100,9 +100,6 @@ export default function ExternalDetail() {
                 <span className={s.place}>{event.location}</span>
               </div>
             )}
-            {event.description && (
-              <p className={s.notes}>{event.description}</p>
-            )}
             <div className={s.row}>
               <LockIcon />
               <span>
