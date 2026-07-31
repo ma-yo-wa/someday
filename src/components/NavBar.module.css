@@ -177,7 +177,8 @@
 }
 
 .bulbOn {
-  background: var(--rose);
+  /* Status green — “live” — not the rose accent used for plans/CTAs. */
+  background: #3d8f4a;
 }
 
 .bulbWait {
