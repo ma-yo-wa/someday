@@ -62,6 +62,11 @@ create table if not exists private.app_config (
   value text not null
 );
 
+-- Not in the API-exposed schemas, and anon/authenticated are revoked on
+-- the schema — but enable RLS with no policies so the dashboard linter
+-- is quiet and any accidental exposure still denies client roles.
+alter table private.app_config enable row level security;
+
 -- Fill these in once (SQL editor runs as postgres, so this is allowed):
 --   insert into private.app_config (key, value) values
 --     ('push_fn_url',  'https://<project-ref>.supabase.co/functions/v1/push-fan-out'),
