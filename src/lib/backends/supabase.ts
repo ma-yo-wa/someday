@@ -231,6 +231,7 @@ export class SupabaseBackend implements Backend {
         calendar_name: e.calendar,
         updated_at: new Date().toISOString(),
       }));
+      const sentPlaces = rows.filter((r) => r.location).length;
       // Chunk so one bad row doesn’t hide behind a giant payload failure.
       const chunk = 80;
       for (let i = 0; i < rows.length; i += chunk) {
@@ -238,11 +239,28 @@ export class SupabaseBackend implements Backend {
         const { data, error: insErr } = await this.client
           .from('external_events')
           .insert(slice)
-          .select('id');
+          .select('id, location');
         if (insErr) throw mapExternalError(insErr);
         if (!data?.length) {
           throw new Error(
             'Calendar rows didn’t save — check you’re signed in and migration 003 grants are applied',
+          );
+        }
+      }
+
+      // Catch silent drops (stale schema cache / missing column privileges).
+      if (sentPlaces > 0) {
+        const { data: placed, error: checkErr } = await this.client
+          .from('external_events')
+          .select('id')
+          .eq('space_id', this.spaceId)
+          .eq('owner_id', this.uid)
+          .not('location', 'is', null)
+          .limit(1);
+        if (checkErr) throw mapExternalError(checkErr);
+        if (!placed?.length) {
+          throw new Error(
+            'Places didn’t save — in Supabase run migrations/005_external_event_details.sql, then Settings → Refresh overlay',
           );
         }
       }

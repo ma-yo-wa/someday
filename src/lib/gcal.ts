@@ -190,32 +190,49 @@ export async function fetchGoogleEvents(
   max.setMonth(max.getMonth() + 3);
 
   const cal = encodeURIComponent(calendarId);
-  const url =
-    `https://www.googleapis.com/calendar/v3/calendars/${cal}/events` +
-    `?timeMin=${min.toISOString()}&timeMax=${max.toISOString()}` +
-    '&singleEvents=true&orderBy=startTime&maxResults=250';
-
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (res.status === 401 || res.status === 403) {
-    clearGoogleToken();
-    throw new Error('Google access expired — connect again');
-  }
-  if (!res.ok) throw new Error("Couldn't read Google Calendar");
-
-  const body = (await res.json()) as {
-    items?: Array<{
-      id: string;
-      summary?: string;
-      location?: string;
-      description?: string;
-      start: { date?: string; dateTime?: string };
-      end: { date?: string; dateTime?: string };
-    }>;
+  type GCalItem = {
+    id: string;
+    summary?: string;
+    location?: string;
+    description?: string;
+    start: { date?: string; dateTime?: string };
+    end: { date?: string; dateTime?: string };
   };
+
+  // Explicit fields so location/description can’t be omitted by a sparse
+  // partial response; page through so a busy shared calendar isn’t truncated.
+  const items: GCalItem[] = [];
+  let pageToken = '';
+  for (let page = 0; page < 6; page++) {
+    const url =
+      `https://www.googleapis.com/calendar/v3/calendars/${cal}/events` +
+      `?timeMin=${encodeURIComponent(min.toISOString())}` +
+      `&timeMax=${encodeURIComponent(max.toISOString())}` +
+      '&singleEvents=true&orderBy=startTime&maxResults=250' +
+      '&fields=items(id,summary,location,description,start,end),nextPageToken' +
+      (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '');
+
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401 || res.status === 403) {
+      clearGoogleToken();
+      throw new Error('Google access expired — connect again');
+    }
+    if (!res.ok) throw new Error("Couldn't read Google Calendar");
+
+    const body = (await res.json()) as {
+      items?: GCalItem[];
+      nextPageToken?: string;
+    };
+    items.push(...(body.items ?? []));
+    if (!body.nextPageToken) break;
+    pageToken = body.nextPageToken;
+  }
 
   const label = savedGoogleCalendar()?.summary || 'Google';
 
-  return (body.items ?? [])
+  return items
     .filter((ev) => ev.id && (ev.start?.date || ev.start?.dateTime))
     .map((ev) => {
       const allDay = Boolean(ev.start.date);
@@ -243,8 +260,9 @@ export async function fetchGoogleEvents(
     });
 }
 
-function cleanPlace(raw: string | undefined | null): string | null {
-  const t = raw?.replace(/\s+/g, ' ').trim();
+function cleanPlace(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const t = raw.replace(/\s+/g, ' ').trim();
   return t || null;
 }
 
@@ -265,6 +283,10 @@ function stripHtml(raw: string): string {
 
 function looksLikeUrl(s: string): boolean {
   return /^(https?:\/\/|www\.)/i.test(s) || /^[\w.+-]+@[\w.-]+$/i.test(s);
+}
+
+function looksLikePhone(s: string): boolean {
+  return /^\+?\d[\d\s().-]{6,}$/.test(s);
 }
 
 /** Prefer Google’s location field; otherwise mine a short place from notes. */
@@ -302,12 +324,30 @@ function placeFromEvent(
 
   for (const line of notes.split(/\n+/)) {
     const t = line.trim();
-    if (!t || looksLikeUrl(t) || t.length > 180) continue;
-    // Street-style: "12 Main St, City" — skip confirmation codes / "Reservation URL"
-    if (/^(reservation|confirmation|check-?in|check-?out|phone|email)\b/i.test(t)) {
+    if (!t || looksLikeUrl(t) || looksLikePhone(t) || t.length > 180) continue;
+    if (
+      /^(reservation|confirmation|check-?in|check-?out|phone|email)\b/i.test(t)
+    ) {
       continue;
     }
-    if (/^\d{1,5}\s+\S+/.test(t) && /,/.test(t)) {
+    // "12 Main St, City" or title-prefixed "… 66 Avenue Road Unit 1, Toronto…"
+    if (/^\d{1,5}\s+[A-Za-z]/.test(t) && /,/.test(t)) {
+      return cleanPlace(t);
+    }
+    const embedded = t.match(
+      /\b(\d{1,5}\s+[A-Za-z][^,]{2,80},\s*[^,]{2,60}(?:,\s*[^,]{2,40})?)/,
+    );
+    if (embedded?.[1]) {
+      const p = cleanPlace(embedded[1]);
+      if (p && p.length <= 180) return p;
+    }
+    // "The Broadway Stoneleigh, Stoneleigh, Epsom KT17 2JA, UK"
+    if (
+      /,/.test(t) &&
+      /\b(?:[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}|[A-Z]\d[A-Z]\s*\d[A-Z]\d)\b/i.test(
+        t,
+      )
+    ) {
       return cleanPlace(t);
     }
   }
