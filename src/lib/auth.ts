@@ -80,7 +80,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
   if (!clean || !clean.includes('@')) {
     throw new Error('That doesn’t look like an email');
   }
-  const redirectTo = window.location.origin + window.location.pathname;
+  const redirectTo = `${appOrigin()}/`;
   const { error } = await sb.auth.resetPasswordForEmail(clean, { redirectTo });
   if (error) throw error;
 }
@@ -321,9 +321,18 @@ export async function joinInvite(code: string, bringItems = false): Promise<void
   if (error) throwSb(error);
 }
 
+/** Canonical production origin — invite links should never ship as localhost. */
+const PROD_ORIGIN = 'https://someday-app.someday.workers.dev';
+
+export function appOrigin(): string {
+  const { protocol, hostname, origin } = window.location;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return PROD_ORIGIN;
+  if (protocol === 'https:' || protocol === 'http:') return origin.replace(/\/$/, '');
+  return PROD_ORIGIN;
+}
+
 export function inviteUrl(code: string): string {
-  const base = window.location.origin + window.location.pathname;
-  return `${base}?invite=${encodeURIComponent(code)}`;
+  return `${appOrigin()}/?invite=${encodeURIComponent(code)}`;
 }
 
 export function pendingInvite(): string | null {
