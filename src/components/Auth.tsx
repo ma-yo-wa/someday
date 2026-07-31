@@ -5,7 +5,7 @@ import f from './Form.module.css';
 import s from './Auth.module.css';
 
 interface Props {
-  onSignedIn: () => void;
+  onSignedIn: () => void | Promise<void>;
   /** Shown when she arrived via invite before signing in. */
   inviterHint?: string | null;
 }
@@ -37,7 +37,7 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
     try {
       if (mode === 'signup') await signUpWithPassword(clean, password, name);
       else await signInWithPassword(clean, password);
-      onSignedIn();
+      await onSignedIn();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Couldn’t sign in');
     } finally {

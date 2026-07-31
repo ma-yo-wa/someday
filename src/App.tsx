@@ -31,6 +31,9 @@ export default function App() {
   const setInviteCode = useApp((st) => st.setInviteCode);
   const main = useRef<HTMLElement>(null);
   const [inviterHint, setInviterHint] = useState<string | null>(null);
+  // After Auth unmounts, iOS often delivers the Sign-in tap to whatever is
+  // now under the finger (usually the avatar → Settings). Eat that click.
+  const [blockChrome, setBlockChrome] = useState(false);
 
   useEffect(() => {
     void boot();
@@ -64,8 +67,14 @@ export default function App() {
       <div className={s.app}>
         <Auth
           inviterHint={inviterHint}
-          onSignedIn={() => {
-            void refreshSpace();
+          onSignedIn={async () => {
+            setBlockChrome(true);
+            useApp.getState().setSettingsOpen(false);
+            try {
+              await refreshSpace();
+            } finally {
+              window.setTimeout(() => setBlockChrome(false), 600);
+            }
           }}
         />
         <Toasts />
@@ -74,7 +83,10 @@ export default function App() {
   }
 
   return (
-    <div className={s.app}>
+    <div
+      className={s.app}
+      style={blockChrome ? { pointerEvents: 'none' } : undefined}
+    >
       <NavBar />
 
       <main
