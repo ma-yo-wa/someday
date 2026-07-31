@@ -31,6 +31,8 @@ export interface GoogleCalendar {
   id: string;
   summary: string;
   primary: boolean;
+  /** owner | writer | reader — used to group “Mine” vs “Other”. */
+  accessRole: 'owner' | 'writer' | 'reader' | string;
 }
 
 function loadScript(src: string): Promise<void> {
@@ -164,6 +166,7 @@ export async function listGoogleCalendars(token: string): Promise<GoogleCalendar
       id: c.id,
       summary: c.summary?.trim() || c.id,
       primary: Boolean(c.primary),
+      accessRole: c.accessRole || 'reader',
     }));
 
   // Primary first, then A–Z.

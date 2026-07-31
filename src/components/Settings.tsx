@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import Sheet from './Sheet';
 import Switch from './Switch';
+import GcalPicker from './GcalPicker';
 import { useApp } from '../lib/store';
 import { updateDisplayName } from '../lib/auth';
 import {
@@ -76,6 +77,7 @@ export default function Settings() {
     if (!token) {
       toast('Connect Google again');
       setGcalOn(false);
+      setGcalList(null);
       return;
     }
     setGcalBusy(true);
@@ -96,6 +98,17 @@ export default function Settings() {
       toast(err instanceof Error ? err.message : 'Couldn’t load that calendar');
     } finally {
       setGcalBusy(false);
+    }
+  }
+
+  function closeGcalPicker() {
+    const had = savedGoogleCalendar();
+    setGcalList(null);
+    if (!had) {
+      clearGoogleToken();
+      setGcalOn(false);
+      setGcalName(null);
+      setExternal([]);
     }
   }
 
@@ -231,7 +244,6 @@ export default function Settings() {
                   }
                   setGcalOn(true);
                   setGcalList(calendars);
-                  toast('Pick which calendar to show');
                 } catch (err) {
                   setGcalOn(false);
                   toast(err instanceof Error ? err.message : 'Google connect failed');
@@ -242,7 +254,7 @@ export default function Settings() {
             }}
           />
         </div>
-        {gcalOn && gcalName && !gcalList && (
+        {gcalOn && gcalName && (
           <button
             type="button"
             className={f.listRow}
@@ -270,34 +282,19 @@ export default function Settings() {
           </button>
         )}
       </div>
-      {gcalList && (
-        <>
-          <span className={f.label}>Choose a calendar</span>
-          <div className={f.group}>
-            {gcalList.map((cal) => (
-              <button
-                key={cal.id}
-                type="button"
-                className={f.listRow}
-                disabled={gcalBusy}
-                onClick={() => void pickGoogleCalendar(cal)}
-              >
-                <span className={f.rowLabel}>
-                  {cal.summary}
-                  {cal.primary ? ' · Primary' : ''}
-                </span>
-                <span className={f.hint}>
-                  {savedGoogleCalendar()?.id === cal.id ? '✓' : '›'}
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
       <p className={f.rowNote}>
         Read-only overlay from one Google calendar. Never becomes a plan. Best
         from Safari/Chrome the first time you connect.
       </p>
+
+      <GcalPicker
+        open={!!gcalList?.length}
+        calendars={gcalList ?? []}
+        selectedId={savedGoogleCalendar()?.id ?? null}
+        busy={gcalBusy}
+        onClose={closeGcalPicker}
+        onPick={(cal) => void pickGoogleCalendar(cal)}
+      />
 
       {!googleClientId() && (
         <>
