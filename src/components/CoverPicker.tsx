@@ -4,7 +4,7 @@ import { fetchGifs, type GifItem } from '../lib/giphy';
 import {
   emojiCover,
   fileToCoverDataUrl,
-  filterIcons,
+  iconsForPicker,
   isEmojiCover,
 } from '../lib/cover';
 import CoverArt from './CoverArt';
@@ -71,7 +71,7 @@ export default function CoverPicker({ value, onChange, titleHint }: Props) {
 
   useEffect(() => () => ctrl.current?.abort(), []);
 
-  const icons = filterIcons(tab === 'icons' ? q : '');
+  const icons = iconsForPicker(titleHint(), tab === 'icons' ? q : '');
 
   return (
     <div className={s.wrap}>
@@ -137,7 +137,7 @@ export default function CoverPicker({ value, onChange, titleHint }: Props) {
           <input
             className={s.searchInput}
             value={q}
-            placeholder={tab === 'gifs' ? 'Search Giphy…' : 'Find an image…'}
+            placeholder={tab === 'gifs' ? 'Search Giphy…' : 'Search icons…'}
             onChange={(e) => {
               const next = e.target.value;
               setQ(next);
