@@ -19,8 +19,6 @@ export type Screen = 'bucket' | 'calendar';
  *  is the same thing before anyone has committed to one. */
 export type Kind = 'plan' | 'bucket';
 
-const PREVIEW_KEY = 'os.previewEvents';
-
 interface Toast {
   id: number;
   text: string;
@@ -90,7 +88,6 @@ interface AppState {
   setInviteCode: (code: string | null) => void;
   updateConfig: (patch: Partial<Config>) => void;
   setExternal: (events: ExternalEvent[]) => void;
-  togglePreview: () => void;
   toast: (text: string) => void;
 }
 
@@ -149,10 +146,6 @@ export const useApp = create<AppState>()((set, get) => {
 
     async boot() {
       const config = get().config;
-      if (localStorage.getItem(PREVIEW_KEY) === '1') {
-        const { sampleEvents } = await import('./sampleEvents');
-        set({ external: sampleEvents() });
-      }
 
       // Auth path: project credentials present, space comes from the session.
       if (authConfigured(config)) {
@@ -290,20 +283,6 @@ export const useApp = create<AppState>()((set, get) => {
     },
 
     setExternal: (external) => set({ external }),
-
-    togglePreview: () => {
-      const on = get().external.length > 0;
-      if (on) {
-        localStorage.removeItem(PREVIEW_KEY);
-        set({ external: [] });
-      } else {
-        localStorage.setItem(PREVIEW_KEY, '1');
-        void import('./sampleEvents').then(({ sampleEvents }) =>
-          set({ external: sampleEvents() }),
-        );
-      }
-      get().toast(on ? 'Sample events cleared' : 'Showing sample events');
-    },
 
     toast: (text) => {
       const id = ++toastSeq;

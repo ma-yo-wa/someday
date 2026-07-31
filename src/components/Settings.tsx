@@ -41,9 +41,7 @@ export default function Settings() {
   const authPhase = useApp((st) => st.authPhase);
   const backendName = useApp((st) => st.backendName);
   const space = useApp((st) => st.space);
-  const external = useApp((st) => st.external);
   const setExternal = useApp((st) => st.setExternal);
-  const togglePreview = useApp((st) => st.togglePreview);
   const setInviteShareOpen = useApp((st) => st.setInviteShareOpen);
   const refreshSpace = useApp((st) => st.refreshSpace);
   const toast = useApp((st) => st.toast);
@@ -89,10 +87,6 @@ export default function Settings() {
               placeholder="Mayowa"
             />
           </div>
-          <p className={f.rowNote}>
-            First letter is your avatar
-            {myName.trim() ? ` (now “${myName.trim()[0]!.toUpperCase()}”)` : ''}.
-          </p>
 
           <span className={f.label}>Partner</span>
           <div className={f.group}>
@@ -203,38 +197,31 @@ export default function Settings() {
             }}
           />
         </div>
-        {!gcalOn && (
-          <div className={f.listRow}>
-            <span className={f.rowLabel}>Sample events</span>
-            <Switch
-              on={external.length > 0 && !gcalOn}
-              onChange={togglePreview}
-              label="Show sample calendar events"
-            />
-          </div>
-        )}
       </div>
       <p className={f.rowNote}>
         Read-only overlay from your primary Google Calendar. Never becomes a
         plan. Best from Safari/Chrome (not the home-screen icon) the first time.
       </p>
 
-      <span className={f.label}>Google client ID</span>
-      <div className={f.group}>
-        <input
-          className={f.input}
-          value={config.googleClientId}
-          onChange={(e) => updateConfig({ googleClientId: e.target.value })}
-          placeholder="xxxx.apps.googleusercontent.com"
-          autoCapitalize="none"
-          spellCheck={false}
-        />
-      </div>
-      <p className={f.rowNote}>
-        {googleClientId()
-          ? 'Client ID is set. Origins must include this site’s URL in Google Cloud.'
-          : 'Create an OAuth Web client in Google Cloud, enable Calendar API, then paste the client ID (or set VITE_GOOGLE_CLIENT_ID and redeploy).'}
-      </p>
+      {!googleClientId() && (
+        <>
+          <span className={f.label}>Google client ID</span>
+          <div className={f.group}>
+            <input
+              className={f.input}
+              value={config.googleClientId}
+              onChange={(e) => updateConfig({ googleClientId: e.target.value })}
+              placeholder="xxxx.apps.googleusercontent.com"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+          </div>
+          <p className={f.rowNote}>
+            Set VITE_GOOGLE_CLIENT_ID in Cloudflare and redeploy, or paste a Web
+            client ID here once.
+          </p>
+        </>
+      )}
 
       <span className={f.label}>Notifications</span>
       <div className={f.group}>

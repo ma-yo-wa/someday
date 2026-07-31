@@ -109,7 +109,6 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
               onChange={(e) => setName(e.target.value)}
             />
           </div>
-          <p className={s.fieldHint}>First letter becomes your avatar.</p>
         </>
       )}
 
