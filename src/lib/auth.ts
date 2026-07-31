@@ -94,8 +94,13 @@ export async function signUpWithPassword(
   }
 
   // Belt-and-suspenders if the trigger used a stale default.
+  // App reads public.profiles — Auth “Display name” in the dashboard is separate.
   if (data.user) {
-    await sb.from('profiles').update({ display_name: name }).eq('id', data.user.id);
+    const { error: profErr } = await sb
+      .from('profiles')
+      .update({ display_name: name })
+      .eq('id', data.user.id);
+    if (profErr) throwSb(profErr);
   }
 }
 
@@ -149,12 +154,27 @@ export async function loadSpace(): Promise<SpaceInfo | null> {
     .select('id, display_name')
     .in('id', ids);
 
-  const nameOf = (id: string | null) =>
-    profiles?.find((p) => p.id === id)?.display_name ?? null;
+  const metaName = metaDisplayName(sess.session?.user?.user_metadata);
+  const nameOf = (id: string | null) => {
+    const fromProfile = profiles?.find((p) => p.id === id)?.display_name?.trim();
+    if (fromProfile) return fromProfile;
+    // Own row missing/blank — Auth metadata is a fallback (dashboard edits land here).
+    if (id === uid && metaName) return metaName;
+    return null;
+  };
 
   const me: 0 | 1 = space.partner_1_id === uid ? 0 : 1;
-  const myName = nameOf(uid) ?? 'Me';
+  let myName = nameOf(uid) ?? 'Me';
   const partnerName = nameOf(partnerId);
+
+  // Heal profiles when Auth has a name but the row the app reads does not.
+  if (metaName && nameOf(uid) === metaName) {
+    const row = profiles?.find((p) => p.id === uid)?.display_name?.trim();
+    if (!row) {
+      await sb.from('profiles').update({ display_name: metaName }).eq('id', uid);
+      myName = metaName;
+    }
+  }
 
   // Keep the local config in step so the rest of the app keeps working.
   const config = loadConfig();
@@ -186,12 +206,32 @@ export async function updateDisplayName(name: string): Promise<void> {
   if (!uid) return;
   const clean = name.trim();
   if (!clean) return;
-  await sb.from('profiles').update({ display_name: clean }).eq('id', uid);
+
+  const { error: profErr } = await sb
+    .from('profiles')
+    .update({ display_name: clean })
+    .eq('id', uid);
+  if (profErr) throwSb(profErr);
+
+  // Keep Auth dashboard “Display name” in sync with the app.
+  const { error: authErr } = await sb.auth.updateUser({
+    data: { display_name: clean },
+  });
+  if (authErr) throw authErr;
 
   const config = loadConfig();
   const names: [string, string] = [...config.names];
   names[config.me] = clean;
   saveConfig({ ...config, names });
+}
+
+function metaDisplayName(meta: Record<string, unknown> | undefined): string | null {
+  if (!meta) return null;
+  for (const key of ['display_name', 'full_name', 'name'] as const) {
+    const v = meta[key];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return null;
 }
 
 /** supabase-js still returns plain { message, … } objects, not Error. */
