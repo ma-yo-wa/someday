@@ -10,7 +10,7 @@
    Invoked by the push triggers in push.sql with:
      { recipient_id, space_id, activity_id?, kind, title, body }
 
-   kind is one of: scheduled | notes | joined
+   kind is one of: idea | scheduled | notes | joined
 
    Secrets required (supabase secrets set ...):
      VAPID_PUBLIC_KEY    base64url, uncompressed P-256 point (65 bytes)

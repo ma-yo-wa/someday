@@ -63,7 +63,9 @@ declare
   title       text;
   body        text;
 begin
-  if (tg_op = 'INSERT' and new.date_time is not null)
+  if tg_op = 'INSERT' and new.date_time is null then
+    kind := 'idea';
+  elsif (tg_op = 'INSERT' and new.date_time is not null)
      or (tg_op = 'UPDATE' and old.date_time is null and new.date_time is not null) then
     kind := 'scheduled';
   elsif tg_op = 'UPDATE'
@@ -86,7 +88,13 @@ begin
   select display_name into actor_name from public.profiles where id = actor;
   actor_name := coalesce(actor_name, 'Your partner');
 
-  if kind = 'scheduled' then
+  if kind = 'idea' then
+    title := '💡 ' || actor_name || ' added “' || new.title || '” to the bucket';
+    body  := case
+               when coalesce(btrim(new.description), '') <> '' then left(new.description, 120)
+               else 'Open Someday when you’re free'
+             end;
+  elsif kind = 'scheduled' then
     title := '📅 ' || actor_name || ' locked in a date for ' || new.title || '!';
     body  := to_char(new.date_time at time zone 'UTC', 'Dy, Mon DD')
              || case when new.all_day then '' else ' at ' ||
