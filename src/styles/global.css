@@ -12,6 +12,28 @@ html,
 body,
 #root {
   height: 100%;
+  min-height: 100%;
+}
+
+/* Home Screen PWAs on iOS: with viewport-fit=cover + translucent status
+   bar, height:100% is shorter than the physical screen and leaves a
+   dead band at the bottom (reads like browser chrome still pushing
+   the app up). 100vh matches the full display; safe-area padding on
+   the nav/tab bars keeps controls clear of the home indicator. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  html,
+  body,
+  #root {
+    height: 100vh;
+    min-height: 100vh;
+  }
+}
+
+html.standalone,
+html.standalone body,
+html.standalone #root {
+  height: 100vh;
+  min-height: 100vh;
 }
 
 html {
