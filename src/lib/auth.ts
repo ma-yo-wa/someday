@@ -194,11 +194,26 @@ export async function updateDisplayName(name: string): Promise<void> {
   saveConfig({ ...config, names });
 }
 
+/** supabase-js still returns plain { message, … } objects, not Error. */
+function throwSb(error: { message?: string; hint?: string; code?: string }): never {
+  const msg = error.message?.trim() || 'Something went wrong';
+  const hint = error.hint?.trim();
+  // Missing RPC = invites migration never ran on this project.
+  if (/peek_invite|join_space/i.test(msg) && /could not find the function/i.test(msg)) {
+    throw new Error(
+      'Invite isn’t set up on the server yet. In Supabase SQL, run migrations/001_spans_and_invites.sql.',
+    );
+  }
+  throw new Error(hint && hint !== msg ? `${msg} (${hint})` : msg);
+}
+
 export async function peekInvite(code: string): Promise<InvitePeek | null> {
   const sb = await getClient();
   if (!sb) throw new Error('Supabase isn’t configured');
-  const { data, error } = await sb.rpc('peek_invite', { code: code.trim().toLowerCase() });
-  if (error) throw error;
+  const cleaned = code.trim().toLowerCase();
+  if (!cleaned) throw new Error('That invite link is missing a code');
+  const { data, error } = await sb.rpc('peek_invite', { code: cleaned });
+  if (error) throwSb(error);
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
   return {
@@ -212,9 +227,11 @@ export async function peekInvite(code: string): Promise<InvitePeek | null> {
 export async function joinInvite(code: string, bringItems = false): Promise<void> {
   const sb = await getClient();
   if (!sb) throw new Error('Supabase isn’t configured');
+  const cleaned = code.trim().toLowerCase();
+  if (!cleaned) throw new Error('That invite link is missing a code');
   const fn = bringItems ? 'join_space_bringing_items' : 'join_space';
-  const { error } = await sb.rpc(fn, { code: code.trim().toLowerCase() });
-  if (error) throw error;
+  const { error } = await sb.rpc(fn, { code: cleaned });
+  if (error) throwSb(error);
 }
 
 export function inviteUrl(code: string): string {

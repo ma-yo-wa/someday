@@ -24,12 +24,21 @@ export default function InviteAccept({ code, open, onJoined, onDismiss }: Props)
   useEffect(() => {
     if (!open || !code) return;
     let cancelled = false;
+    setError(null);
+    setPeek(null);
     void peekInvite(code)
       .then((p) => {
-        if (!cancelled) setPeek(p);
+        if (cancelled) return;
+        if (!p) {
+          setError('That invite isn’t valid. Ask for a fresh link.');
+          return;
+        }
+        setPeek(p);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Invalid invite');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Couldn’t look up that invite');
+        }
       });
     return () => {
       cancelled = true;
