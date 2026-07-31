@@ -72,6 +72,17 @@ textarea.input {
   padding: 0 4px;
 }
 
+/* Read-only — the other person’s name, not a field you edit. */
+.withName {
+  margin: 0;
+  padding: 4px 4px 0;
+  font: var(--t-title3, var(--t-body));
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
 /* iOS segmented control: a filled track with a sliding white knob under
    the selected label. */
 .segmented {

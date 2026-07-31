@@ -134,7 +134,7 @@ export default function Settings() {
     <Sheet open={open} onClose={() => setOpen(false)} heading="Settings">
       {signedIn && (
         <>
-          <span className={f.label}>Your name</span>
+          <span className={f.label}>You</span>
           <div className={f.group}>
             <input
               className={f.input}
@@ -157,30 +157,28 @@ export default function Settings() {
             />
           </div>
 
-          <span className={f.label}>Together</span>
-          <div className={f.group}>
-            {space?.partner2Id && space.partnerName ? (
-              <div className={f.listRow}>
-                <span className={f.rowLabel}>{space.partnerName}</span>
+          <span className={f.label}>With</span>
+          {space?.partner2Id && space.partnerName ? (
+            <p className={f.withName}>{space.partnerName}</p>
+          ) : (
+            <>
+              <div className={f.group}>
+                <button
+                  type="button"
+                  className={f.listRow}
+                  onClick={() => {
+                    setOpen(false);
+                    setInviteShareOpen(true);
+                  }}
+                >
+                  <span className={f.rowLabel}>Invite your person</span>
+                  <span className={f.hint}>›</span>
+                </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                className={f.listRow}
-                onClick={() => {
-                  setOpen(false);
-                  setInviteShareOpen(true);
-                }}
-              >
-                <span className={f.rowLabel}>Invite your person</span>
-                <span className={f.hint}>›</span>
-              </button>
-            )}
-          </div>
-          {!space?.partner2Id && (
-            <p className={f.rowNote}>
-              One open seat — share an invite when you’re ready
-            </p>
+              <p className={f.rowNote}>
+                One open seat — share an invite when you’re ready
+              </p>
+            </>
           )}
         </>
       )}
