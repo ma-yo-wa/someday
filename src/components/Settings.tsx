@@ -10,6 +10,10 @@ import {
   fetchGoogleEvents,
   googleClientId,
   googleToken,
+  listGoogleCalendars,
+  saveGoogleCalendar,
+  savedGoogleCalendar,
+  type GoogleCalendar,
 } from '../lib/gcal';
 import {
   disablePush,
@@ -52,15 +56,48 @@ export default function Settings() {
   const [spaceId, setSpaceId] = useState(config.spaceId);
   const [myName, setMyName] = useState(space?.myName ?? config.names[config.me]);
   const [gcalOn, setGcalOn] = useState(Boolean(googleToken()));
+  const [gcalName, setGcalName] = useState(savedGoogleCalendar()?.summary ?? null);
+  const [gcalList, setGcalList] = useState<GoogleCalendar[] | null>(null);
+  const [gcalBusy, setGcalBusy] = useState(false);
   const [bell, setBell] = useState<PushState>('default');
   const [bellBusy, setBellBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setMyName(space?.myName ?? config.names[config.me]);
+    setGcalOn(Boolean(googleToken()));
+    setGcalName(savedGoogleCalendar()?.summary ?? null);
     void registerPush().then(() => setBell(pushState()));
     void syncPush().then(() => setBell(pushState()));
   }, [open, space?.myName, config.names, config.me]);
+
+  async function pickGoogleCalendar(cal: GoogleCalendar) {
+    const token = googleToken();
+    if (!token) {
+      toast('Connect Google again');
+      setGcalOn(false);
+      return;
+    }
+    setGcalBusy(true);
+    try {
+      saveGoogleCalendar(cal);
+      setGcalName(cal.summary);
+      setGcalList(null);
+      const owner = space?.myId ?? String(config.me);
+      const events = await fetchGoogleEvents(token, owner, cal.id);
+      setExternal(events);
+      setGcalOn(true);
+      toast(
+        events.length
+          ? `${cal.summary} — ${events.length} events`
+          : `${cal.summary} — nothing in the next few months`,
+      );
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Couldn’t load that calendar');
+    } finally {
+      setGcalBusy(false);
+    }
+  }
 
   return (
     <Sheet open={open} onClose={() => setOpen(false)} heading="Settings">
@@ -169,39 +206,97 @@ export default function Settings() {
           <span className={f.rowLabel}>Google Calendar</span>
           <Switch
             on={gcalOn}
+            disabled={gcalBusy}
             label="Connect Google Calendar"
             onChange={(on) => {
               void (async () => {
                 if (!on) {
                   clearGoogleToken();
+                  saveGoogleCalendar(null);
+                  setGcalList(null);
+                  setGcalName(null);
                   setExternal([]);
                   setGcalOn(false);
                   toast('Google Calendar disconnected');
                   return;
                 }
+                setGcalBusy(true);
                 try {
                   const token = await connectGoogle();
-                  const owner = space?.myId ?? String(config.me);
-                  const events = await fetchGoogleEvents(token, owner);
-                  setExternal(events);
+                  const calendars = await listGoogleCalendars(token);
+                  if (!calendars.length) {
+                    setGcalOn(false);
+                    toast('No calendars found on that Google account');
+                    return;
+                  }
                   setGcalOn(true);
-                  toast(
-                    events.length
-                      ? `Showing ${events.length} Google events`
-                      : 'Connected — no events in the next few months',
-                  );
+                  setGcalList(calendars);
+                  toast('Pick which calendar to show');
                 } catch (err) {
                   setGcalOn(false);
                   toast(err instanceof Error ? err.message : 'Google connect failed');
+                } finally {
+                  setGcalBusy(false);
                 }
               })();
             }}
           />
         </div>
+        {gcalOn && gcalName && !gcalList && (
+          <button
+            type="button"
+            className={f.listRow}
+            disabled={gcalBusy}
+            onClick={() => {
+              void (async () => {
+                const token = googleToken();
+                if (!token) {
+                  toast('Connect Google again');
+                  return;
+                }
+                setGcalBusy(true);
+                try {
+                  setGcalList(await listGoogleCalendars(token));
+                } catch (err) {
+                  toast(err instanceof Error ? err.message : 'Couldn’t list calendars');
+                } finally {
+                  setGcalBusy(false);
+                }
+              })();
+            }}
+          >
+            <span className={f.rowLabel}>{gcalName}</span>
+            <span className={f.hint}>Change ›</span>
+          </button>
+        )}
       </div>
+      {gcalList && (
+        <>
+          <span className={f.label}>Choose a calendar</span>
+          <div className={f.group}>
+            {gcalList.map((cal) => (
+              <button
+                key={cal.id}
+                type="button"
+                className={f.listRow}
+                disabled={gcalBusy}
+                onClick={() => void pickGoogleCalendar(cal)}
+              >
+                <span className={f.rowLabel}>
+                  {cal.summary}
+                  {cal.primary ? ' · Primary' : ''}
+                </span>
+                <span className={f.hint}>
+                  {savedGoogleCalendar()?.id === cal.id ? '✓' : '›'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       <p className={f.rowNote}>
-        Read-only overlay from your primary Google Calendar. Never becomes a
-        plan. Best from Safari/Chrome (not the home-screen icon) the first time.
+        Read-only overlay from one Google calendar. Never becomes a plan. Best
+        from Safari/Chrome the first time you connect.
       </p>
 
       {!googleClientId() && (

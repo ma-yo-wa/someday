@@ -24,7 +24,14 @@ declare global {
 }
 
 const TOKEN_KEY = 'someday.gcalToken';
+const CAL_KEY = 'someday.gcalCalendar';
 const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+
+export interface GoogleCalendar {
+  id: string;
+  summary: string;
+  primary: boolean;
+}
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -110,19 +117,78 @@ export function clearGoogleToken(): void {
   }
 }
 
+export function savedGoogleCalendar(): GoogleCalendar | null {
+  try {
+    const raw = localStorage.getItem(CAL_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as GoogleCalendar;
+    if (!parsed?.id || !parsed?.summary) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveGoogleCalendar(cal: GoogleCalendar | null): void {
+  try {
+    if (!cal) localStorage.removeItem(CAL_KEY);
+    else localStorage.setItem(CAL_KEY, JSON.stringify(cal));
+  } catch {
+    /* */
+  }
+}
+
+export async function listGoogleCalendars(token: string): Promise<GoogleCalendar[]> {
+  const res = await fetch(
+    'https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=reader',
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (res.status === 401 || res.status === 403) {
+    clearGoogleToken();
+    throw new Error('Google access expired — connect again');
+  }
+  if (!res.ok) throw new Error("Couldn't list your calendars");
+
+  const body = (await res.json()) as {
+    items?: Array<{
+      id: string;
+      summary?: string;
+      primary?: boolean;
+      accessRole?: string;
+    }>;
+  };
+
+  const list = (body.items ?? [])
+    .filter((c) => c.id)
+    .map((c) => ({
+      id: c.id,
+      summary: c.summary?.trim() || c.id,
+      primary: Boolean(c.primary),
+    }));
+
+  // Primary first, then A–Z.
+  list.sort((a, b) => {
+    if (a.primary !== b.primary) return a.primary ? -1 : 1;
+    return a.summary.localeCompare(b.summary);
+  });
+  return list;
+}
+
 /* Titles are shared by default. A null title is reserved for an explicit
    busy-only share later — Google's own events always carry a summary. */
 export async function fetchGoogleEvents(
   token: string,
   ownerId: string,
+  calendarId: string,
 ): Promise<ExternalEvent[]> {
   const min = new Date();
   min.setMonth(min.getMonth() - 1);
   const max = new Date();
   max.setMonth(max.getMonth() + 3);
 
+  const cal = encodeURIComponent(calendarId);
   const url =
-    'https://www.googleapis.com/calendar/v3/calendars/primary/events' +
+    `https://www.googleapis.com/calendar/v3/calendars/${cal}/events` +
     `?timeMin=${min.toISOString()}&timeMax=${max.toISOString()}` +
     '&singleEvents=true&orderBy=startTime&maxResults=250';
 
@@ -141,6 +207,8 @@ export async function fetchGoogleEvents(
       end: { date?: string; dateTime?: string };
     }>;
   };
+
+  const label = savedGoogleCalendar()?.summary || 'Google';
 
   return (body.items ?? []).map((ev) => {
     const allDay = Boolean(ev.start.date);
@@ -162,7 +230,7 @@ export async function fetchGoogleEvents(
       startsAt: toLocal(startRaw, allDay),
       endsAt,
       allDay,
-      calendar: 'Google',
+      calendar: label,
     };
   });
 }
