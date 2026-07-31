@@ -113,6 +113,7 @@ export default function Settings() {
   }
 
   return (
+    <>
     <Sheet open={open} onClose={() => setOpen(false)} heading="Settings">
       {signedIn ? (
         <>
@@ -254,7 +255,7 @@ export default function Settings() {
             }}
           />
         </div>
-        {gcalOn && gcalName && (
+        {gcalOn && (
           <button
             type="button"
             className={f.listRow}
@@ -264,6 +265,7 @@ export default function Settings() {
                 const token = googleToken();
                 if (!token) {
                   toast('Connect Google again');
+                  setGcalOn(false);
                   return;
                 }
                 setGcalBusy(true);
@@ -277,8 +279,8 @@ export default function Settings() {
               })();
             }}
           >
-            <span className={f.rowLabel}>{gcalName}</span>
-            <span className={f.hint}>Change ›</span>
+            <span className={f.rowLabel}>{gcalName ?? 'Choose calendar'}</span>
+            <span className={f.hint}>{gcalName ? 'Change ›' : '›'}</span>
           </button>
         )}
       </div>
@@ -286,15 +288,6 @@ export default function Settings() {
         Read-only overlay from one Google calendar. Never becomes a plan. Best
         from Safari/Chrome the first time you connect.
       </p>
-
-      <GcalPicker
-        open={!!gcalList?.length}
-        calendars={gcalList ?? []}
-        selectedId={savedGoogleCalendar()?.id ?? null}
-        busy={gcalBusy}
-        onClose={closeGcalPicker}
-        onPick={(cal) => void pickGoogleCalendar(cal)}
-      />
 
       {!googleClientId() && (
         <>
@@ -450,6 +443,18 @@ export default function Settings() {
         </div>
       )}
     </Sheet>
+
+    {/* Outside Settings sheet — nested fixed sheets get clipped by the
+        parent’s transform and never cover the screen. */}
+    <GcalPicker
+      open={!!gcalList?.length}
+      calendars={gcalList ?? []}
+      selectedId={savedGoogleCalendar()?.id ?? null}
+      busy={gcalBusy}
+      onClose={closeGcalPicker}
+      onPick={(cal) => void pickGoogleCalendar(cal)}
+    />
+    </>
   );
 }
 

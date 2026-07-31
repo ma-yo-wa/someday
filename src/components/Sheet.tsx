@@ -7,10 +7,19 @@ interface Props {
   onClose: () => void;
   eyebrow?: string;
   heading?: string;
+  /** Raise above another open sheet (e.g. picker over Settings). */
+  stacked?: boolean;
   children: ReactNode;
 }
 
-export default function Sheet({ open, onClose, eyebrow, heading, children }: Props) {
+export default function Sheet({
+  open,
+  onClose,
+  eyebrow,
+  heading,
+  stacked,
+  children,
+}: Props) {
   // A sheet that leaves the page scrollable behind it feels like a web
   // page, not an app.
   useEffect(() => {
@@ -31,7 +40,7 @@ export default function Sheet({ open, onClose, eyebrow, heading, children }: Pro
     <AnimatePresence>
       {open && (
         <motion.div
-          className={s.veil}
+          className={`${s.veil} ${stacked ? s.veilStacked : ''}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

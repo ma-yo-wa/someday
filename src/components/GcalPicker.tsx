@@ -49,7 +49,7 @@ export default function GcalPicker({
     calendars.find((c) => c.id === (pending ?? selectedId)) ?? null;
 
   return (
-    <Sheet open={open} onClose={onClose} heading="Import calendars">
+    <Sheet open={open} onClose={onClose} heading="Import calendars" stacked>
       <p className={s.lead}>Choose one calendar to overlay on your plans.</p>
 
       {sections.map((sec) => (

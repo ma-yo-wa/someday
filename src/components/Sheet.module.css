@@ -8,6 +8,11 @@
   justify-content: center;
 }
 
+/* Stacked sheets (e.g. calendar picker over Settings). */
+.veilStacked {
+  z-index: 70;
+}
+
 /* iOS sheet corners are large and only on the leading edge, and the sheet
    itself is opaque — it's a card in front of the app, not another pane
    of glass. Stacking blur on blur is what makes web sheets look muddy. */
