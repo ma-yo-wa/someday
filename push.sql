@@ -95,7 +95,7 @@ create or replace function private.enqueue_push(
 )
 returns void
 language plpgsql
-security definer set search_path = private, extensions
+security definer set search_path = private, net, extensions, public
 as $$
 declare
   fn_url text := private.cfg('push_fn_url');
@@ -105,22 +105,27 @@ begin
     return;
   end if;
 
-  perform extensions.net.http_post(
-    url     := fn_url,
-    headers := jsonb_build_object(
-                 'Content-Type',  'application/json',
-                 'Authorization', 'Bearer ' || fn_key
-               ),
-    body    := jsonb_build_object(
-                 'recipient_id', recipient,
-                 'space_id',     space_id,
-                 'activity_id',  activity,
-                 'kind',         kind,
-                 'title',        title,
-                 'body',         body
-               ),
-    timeout_milliseconds := 5000
-  );
+  begin
+    perform net.http_post(
+      url     := fn_url,
+      headers := jsonb_build_object(
+                   'Content-Type',  'application/json',
+                   'Authorization', 'Bearer ' || fn_key
+                 ),
+      body    := jsonb_build_object(
+                   'recipient_id', recipient,
+                   'space_id',     space_id,
+                   'activity_id',  activity,
+                   'kind',         kind,
+                   'title',        title,
+                   'body',         body
+                 ),
+      timeout_milliseconds := 5000
+    );
+  exception
+    when others then
+      raise warning 'enqueue_push failed: %', sqlerrm;
+  end;
 end;
 $$;
 
