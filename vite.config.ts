@@ -14,6 +14,8 @@ export default defineConfig({
       filename: 'sw.ts',
       // Prompt so we can show “Update available” instead of a surprise reload.
       registerType: 'prompt',
+      // Register only from UpdateBanner — avoid a second injected registrar.
+      injectRegister: false,
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
       },
