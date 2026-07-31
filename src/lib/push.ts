@@ -53,7 +53,10 @@ export async function registerPush(): Promise<ServiceWorkerRegistration | null> 
 }
 
 export function pushState(): PushState {
-  if (!pushSupported()) return iosNeedsInstall() ? 'ios-install' : 'unsupported';
+  // iOS Safari (tab) advertises some APIs but push only works from the
+  // Home Screen app — check that before “supported”.
+  if (iosNeedsInstall()) return 'ios-install';
+  if (!pushSupported()) return 'unsupported';
   if (Notification.permission === 'denied') return 'denied';
   if (Notification.permission === 'granted') return sub ? 'on' : 'granted-idle';
   return 'default';
@@ -88,16 +91,29 @@ async function forget(endpoint: string): Promise<void> {
 }
 
 export async function enablePush(): Promise<string> {
-  if (!pushSupported()) return "This browser can't do web push";
-  const perm = await Notification.requestPermission();
-  if (perm !== 'granted') {
-    return perm === 'denied' ? 'Blocked — turn it on in browser settings' : 'Not now';
+  if (iosNeedsInstall()) {
+    return 'Add Someday to your Home Screen, open it from there, then try again.';
   }
+  if (!pushSupported()) return "This browser can't do web push";
+
+  let perm = Notification.permission;
+  if (perm === 'default') {
+    perm = await Notification.requestPermission();
+  }
+  if (perm === 'denied') {
+    return 'Blocked — iPhone Settings → Someday → Notifications → Allow';
+  }
+  if (perm !== 'granted') {
+    return 'Tap Allow on the notifications prompt, then try the switch again.';
+  }
+
   if (!reg) await registerPush();
-  if (!reg) return 'Service worker unavailable';
+  if (!reg) return 'Service worker unavailable — close and reopen the app';
 
   const key = loadConfig().vapidPublicKey.trim();
-  if (!key) return 'Allowed. Add a VAPID key to hear from your partner.';
+  if (!key) {
+    return 'Notifications allowed, but VITE_VAPID_PUBLIC_KEY isn’t set yet.';
+  }
 
   try {
     sub = await reg.pushManager.subscribe({
@@ -106,13 +122,18 @@ export async function enablePush(): Promise<string> {
     });
     await persist(sub);
     return 'Notifications on';
-  } catch {
-    return "Couldn't subscribe — check the VAPID key";
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : '';
+    return detail
+      ? `Couldn’t subscribe — ${detail}`
+      : 'Couldn’t subscribe — check the VAPID key';
   }
 }
 
 export async function disablePush(): Promise<string> {
   try {
+    if (!reg) await registerPush();
+    if (!sub && reg) sub = await reg.pushManager.getSubscription();
     if (sub) {
       const endpoint = sub.endpoint;
       await sub.unsubscribe();
@@ -126,6 +147,7 @@ export async function disablePush(): Promise<string> {
 }
 
 export async function syncPush(): Promise<void> {
+  if (iosNeedsInstall()) return;
   if (!pushSupported() || Notification.permission !== 'granted') return;
   if (!reg) await registerPush();
   if (!reg) return;

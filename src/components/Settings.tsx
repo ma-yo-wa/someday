@@ -23,10 +23,10 @@ import f from './Form.module.css';
 
 const PUSH_COPY: Record<PushState, string> = {
   unsupported: "This browser can't do web push.",
-  'ios-install': 'Add Someday to your Home Screen to get notifications.',
+  'ios-install': 'Open Someday from the Home Screen icon to turn notifications on.',
   default: 'Hear when she joins, locks in a date, or updates notes.',
-  denied: 'Blocked — turn notifications on in Settings.',
-  'granted-idle': 'Allowed. Turn the switch on to finish.',
+  denied: 'Blocked — iPhone Settings → Someday → Notifications.',
+  'granted-idle': 'Allowed. Turn the switch on to finish subscribing.',
   on: 'On — joins, locked-in dates, and note changes.',
 };
 
@@ -53,6 +53,7 @@ export default function Settings() {
   const [myName, setMyName] = useState(space?.myName ?? config.names[config.me]);
   const [gcalOn, setGcalOn] = useState(Boolean(googleToken()));
   const [bell, setBell] = useState<PushState>('default');
+  const [bellBusy, setBellBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -229,18 +230,47 @@ export default function Settings() {
           <span className={f.rowLabel}>Push</span>
           <Switch
             on={bell === 'on'}
+            disabled={bellBusy || bell === 'ios-install' || bell === 'unsupported'}
             label="Notifications"
             onChange={(on) => {
+              if (bellBusy) return;
               void (async () => {
-                const msg = on ? await enablePush() : await disablePush();
-                setBell(pushState());
-                toast(msg);
+                setBellBusy(true);
+                try {
+                  const msg = on ? await enablePush() : await disablePush();
+                  await registerPush();
+                  setBell(pushState());
+                  toast(msg);
+                } finally {
+                  setBellBusy(false);
+                }
               })();
             }}
           />
         </div>
       </div>
-      <p className={f.rowNote}>{PUSH_COPY[bell]}</p>
+      <p className={f.rowNote}>
+        {bellBusy ? 'Working…' : PUSH_COPY[bell]}
+      </p>
+
+      {signedIn && !config.vapidPublicKey.trim() && (
+        <>
+          <span className={f.label}>VAPID public key</span>
+          <div className={f.group}>
+            <input
+              className={f.input}
+              value={config.vapidPublicKey}
+              onChange={(e) => updateConfig({ vapidPublicKey: e.target.value })}
+              placeholder="BNxxx…"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+          </div>
+          <p className={f.rowNote}>
+            Needed once — set VITE_VAPID_PUBLIC_KEY in Cloudflare, or paste here.
+          </p>
+        </>
+      )}
 
       {!signedIn && (
         <>
