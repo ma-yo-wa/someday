@@ -50,7 +50,10 @@ export default function GcalPicker({
 
   return (
     <Sheet open={open} onClose={onClose} heading="Import calendars" stacked>
-      <p className={s.lead}>Choose one of your calendars to overlay — yours, not a shared plan</p>
+      <p className={s.lead}>
+        Pick a calendar meant for sharing — travel, stays, appointments. Not
+        gym, commute, or your whole life. One overlay, not a Google dump
+      </p>
 
       {sections.map((sec) => (
         <div key={sec.label} className={s.section}>

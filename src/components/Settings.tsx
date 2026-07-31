@@ -234,8 +234,9 @@ export default function Settings() {
         )}
       </div>
       <p className={f.rowNote}>
-        Imports into the shared space so your partner can see what you’re up to
-        — still not plans. Best from Safari/Chrome the first time you connect
+        Overlay one calendar so your person can see what reshapes the week —
+        trips, stays, appointments. Skip daily routines and private clutter;
+        still not plans. Best from Safari/Chrome the first time you connect
       </p>
 
       {!googleClientId() && (
