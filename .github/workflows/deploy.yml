@@ -27,8 +27,15 @@ jobs:
           VITE_GIPHY_API_KEY: ${{ secrets.VITE_GIPHY_API_KEY }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
         run: |
+          echo "env lens: url=${#VITE_SUPABASE_URL} anon=${#VITE_SUPABASE_ANON_KEY} google=${#VITE_GOOGLE_CLIENT_ID} giphy=${#VITE_GIPHY_API_KEY} vapid=${#VITE_VAPID_PUBLIC_KEY}"
           test -n "$VITE_SUPABASE_URL" || { echo "Missing secret VITE_SUPABASE_URL"; exit 1; }
           test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing secret VITE_SUPABASE_ANON_KEY"; exit 1; }
+          # Prefer legacy JWT anon (eyJ…) until publishable keys are rock-solid in Auth.
+          case "$VITE_SUPABASE_ANON_KEY" in
+            eyJ*) ;;
+            sb_publishable_*) echo "Warning: sb_publishable_ keys often break login; prefer Legacy anon JWT" ;;
+            *) echo "Unexpected anon key format"; exit 1 ;;
+          esac
           npm run build
 
       - name: Deploy to Cloudflare Workers
