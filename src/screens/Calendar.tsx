@@ -40,7 +40,6 @@ export default function Calendar() {
   const setPicked = useApp((st) => st.setPicked);
   const openDetail = useApp((st) => st.openDetail);
   const openExternal = useApp((st) => st.openExternal);
-  const openComposer = useApp((st) => st.openComposer);
   const space = useApp((st) => st.space);
 
   const cursorDate = parseISO(cursor);
@@ -206,9 +205,6 @@ export default function Calendar() {
                   ? 'Nothing planned today'
                   : 'Nothing planned this day'}
             </p>
-            <button type="button" onClick={() => openComposer('plan')}>
-              Plan something
-            </button>
           </div>
         ) : (
           <>
