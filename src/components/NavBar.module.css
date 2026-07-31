@@ -137,12 +137,15 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font: var(--t-caption);
   font-weight: 600;
+  line-height: 1;
   color: #fffdfb;
   border: 2px solid var(--paper);
+  padding-bottom: 1px;
 }
 
 .face + .face {

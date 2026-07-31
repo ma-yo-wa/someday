@@ -206,6 +206,8 @@ export async function fetchGoogleEvents(
     items?: Array<{
       id: string;
       summary?: string;
+      description?: string;
+      location?: string;
       start: { date?: string; dateTime?: string };
       end: { date?: string; dateTime?: string };
     }>;
@@ -231,10 +233,36 @@ export async function fetchGoogleEvents(
       return {
         sourceId: ev.id,
         title: ev.summary?.trim() || 'Busy',
+        location: cleanPlace(ev.location),
+        description: cleanNotes(ev.description),
         startsAt: toLocal(startRaw, allDay),
         endsAt,
         allDay,
         calendar: label,
       };
     });
+}
+
+function cleanPlace(raw: string | undefined): string | null {
+  const t = raw?.replace(/\s+/g, ' ').trim();
+  return t || null;
+}
+
+/** Google descriptions are often HTML (Airbnb, invites). Keep readable text. */
+function cleanNotes(raw: string | undefined): string | null {
+  if (!raw?.trim()) return null;
+  const text = raw
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  if (!text) return null;
+  return text.length > 1200 ? `${text.slice(0, 1197)}…` : text;
 }

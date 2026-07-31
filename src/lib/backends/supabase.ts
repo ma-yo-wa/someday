@@ -224,6 +224,8 @@ export class SupabaseBackend implements Backend {
         owner_id: this.uid,
         source_id: e.sourceId,
         title: e.title,
+        location: e.location,
+        description: e.description,
         starts_at: toTimestamptz(e.startsAt),
         ends_at: toTimestamptz(e.endsAt),
         all_day: e.allDay,
@@ -351,6 +353,8 @@ interface ExternalRow {
   id: string;
   owner_id: string;
   title: string | null;
+  location?: string | null;
+  description?: string | null;
   starts_at: string;
   ends_at: string;
   all_day: boolean;
@@ -362,6 +366,8 @@ function mapExternal(r: ExternalRow): ExternalEvent {
     id: r.id,
     ownerId: r.owner_id,
     title: r.title,
+    location: r.location ?? null,
+    description: r.description ?? null,
     startsAt: fromTimestamptz(r.starts_at, r.all_day) ?? r.starts_at,
     endsAt: fromTimestamptz(r.ends_at, r.all_day) ?? r.ends_at,
     allDay: r.all_day,

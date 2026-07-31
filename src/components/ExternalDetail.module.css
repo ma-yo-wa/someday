@@ -61,11 +61,31 @@
   height: 17px;
   flex: none;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 9px;
   font-weight: 700;
+  line-height: 1;
   color: var(--paper-warm);
+  /* Capitals sit optically low in small circles on iOS. */
+  padding-bottom: 1px;
+}
+
+.place {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.notes {
+  margin: 0;
+  padding: 0 0 0 26px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  letter-spacing: -0.005em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .foot {

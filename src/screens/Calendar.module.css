@@ -204,11 +204,14 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 9px;
   font-weight: 700;
+  line-height: 1;
   color: var(--paper-warm);
+  padding-bottom: 1px;
 }
 
 /* ---------------- agenda ---------------- */
@@ -317,11 +320,14 @@
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 9px;
   font-weight: 700;
+  line-height: 1;
   color: var(--paper-warm);
+  padding-bottom: 1px;
 }
 
 .blank {

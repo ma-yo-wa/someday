@@ -49,6 +49,8 @@ export interface ExternalEvent {
   /** Whose calendar it came from. '0' | '1' locally, a profile uuid live. */
   ownerId: string;
   title: string | null;
+  location: string | null;
+  description: string | null;
   /** Local ISO: "YYYY-MM-DD" when all-day, else "YYYY-MM-DDTHH:MM". */
   startsAt: string;
   endsAt: string;

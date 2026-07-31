@@ -143,6 +143,8 @@ export class LocalBackend implements Backend {
         id: `gcal-${e.sourceId}`,
         ownerId: me,
         title: e.title,
+        location: e.location,
+        description: e.description,
         startsAt: e.startsAt,
         endsAt: e.endsAt,
         allDay: e.allDay,

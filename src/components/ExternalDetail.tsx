@@ -24,6 +24,18 @@ function LockIcon() {
   );
 }
 
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path
+        d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="10" r="2.2" />
+    </svg>
+  );
+}
+
 /* Read-only by construction. There is no edit, no delete, no "turn this
    into a plan" — the calendar it came from owns it, and the one thing
    this sheet must never do is imply otherwise. */
@@ -43,6 +55,14 @@ export default function ExternalDetail() {
     ? 'You'
     : (space?.partnerName ?? config.names[owner] ?? 'Your partner');
   const possessive = isMine ? 'your' : `${ownerName}’s`;
+  const initial = (
+    (isMine ? space?.myName : space?.partnerName) ??
+    config.names[owner] ??
+    '?'
+  )
+    .trim()
+    .charAt(0)
+    .toUpperCase() || '?';
 
   return (
     <Sheet open={!!event} onClose={() => openExternal(null)}>
@@ -67,18 +87,27 @@ export default function ExternalDetail() {
                 style={{ background: faceColor(owner) }}
                 aria-hidden
               >
-                {(config.names[owner]?.[0] ?? '?').toUpperCase()}
+                {initial}
               </span>
               <span>
                 {ownerName}
                 {event.calendar ? ` · ${event.calendar}` : ''}
               </span>
             </div>
+            {event.location && (
+              <div className={s.row}>
+                <PinIcon />
+                <span className={s.place}>{event.location}</span>
+              </div>
+            )}
+            {event.description && (
+              <p className={s.notes}>{event.description}</p>
+            )}
             <div className={s.row}>
               <LockIcon />
               <span>
                 {event.title
-                  ? 'From your calendar — yours, not a shared plan'
+                  ? `From ${possessive} calendar — not a shared plan`
                   : 'Busy only — the title stays private'}
               </span>
             </div>
