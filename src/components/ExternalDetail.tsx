@@ -63,15 +63,15 @@ export default function ExternalDetail() {
               <LockIcon />
               <span>
                 {event.title
-                  ? 'From a connected calendar. Read-only here.'
-                  : 'Shared as busy only — the title stays private.'}
+                  ? 'From your calendar — yours, not a shared plan'
+                  : 'Busy only — the title stays private'}
               </span>
             </div>
           </div>
 
           <p className={s.foot}>
-            Imported events aren’t plans. They sit on the calendar so you can see
-            what’s already taken, and nothing here changes {possessive} calendar.
+            Imported events aren’t plans — they just show what’s already on{' '}
+            {possessive} calendar
           </p>
         </div>
       )}

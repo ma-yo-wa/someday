@@ -50,8 +50,8 @@ export default function Auth({ onSignedIn, inviterHint }: Props) {
       <h1 className={s.brand}>Someday</h1>
       <p className={s.lead}>
         {inviterHint
-          ? `${inviterHint} wants to share a space with you. Sign in to join.`
-          : 'A shared calendar and bucket list for two.'}
+          ? `${inviterHint} wants to share a space with you — sign in to join`
+          : 'A shared calendar and bucket list for two'}
       </p>
 
       <div className={`${f.segmented} ${s.modes}`} role="tablist" aria-label="Account">

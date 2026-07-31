@@ -22,7 +22,7 @@ export default function BucketList() {
     return (
       <div className={s.board}>
         <div className={s.blank}>
-          <p>Things you both want to do, before they have a date.</p>
+          <p>Things you both want to do, before they have a date</p>
           <button type="button" onClick={() => openComposer('bucket')}>
             Add the first one
           </button>

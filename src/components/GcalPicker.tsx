@@ -50,7 +50,7 @@ export default function GcalPicker({
 
   return (
     <Sheet open={open} onClose={onClose} heading="Import calendars" stacked>
-      <p className={s.lead}>Choose one calendar to overlay on your plans.</p>
+      <p className={s.lead}>Choose one of your calendars to overlay — yours, not a shared plan</p>
 
       {sections.map((sec) => (
         <div key={sec.label} className={s.section}>

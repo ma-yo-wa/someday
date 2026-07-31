@@ -77,9 +77,9 @@ export default function InviteAccept({ code, open, onJoined, onDismiss }: Props)
         <>
           <p className={f.rowNote} style={{ marginTop: 8 }}>
             {peek?.isOpen === false
-              ? 'This invite is already full.'
+              ? 'This invite is already full'
               : peek
-                ? `You’ll share a calendar and a bucket list with ${peek.inviterName}.`
+                ? `You’ll share a calendar and a bucket list with ${peek.inviterName}`
                 : 'Looking up the invite…'}
           </p>
           <div className={f.row}>

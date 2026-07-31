@@ -27,12 +27,12 @@ import {
 import f from './Form.module.css';
 
 const PUSH_COPY: Record<PushState, string> = {
-  unsupported: "This browser can't do web push.",
-  'ios-install': 'Open Someday from the Home Screen icon to turn notifications on.',
-  default: 'Hear when she joins, locks in a date, or updates notes.',
-  denied: 'Blocked — iPhone Settings → Someday → Notifications.',
-  'granted-idle': 'Allowed. Turn the switch on to finish subscribing.',
-  on: 'On — joins, locked-in dates, and note changes.',
+  unsupported: "This browser can't do web push",
+  'ios-install': 'Open Someday from the Home Screen icon to turn notifications on',
+  default: 'Hear when she joins, locks in a date, or updates notes',
+  denied: 'Blocked — iPhone Settings → Someday → Notifications',
+  'granted-idle': 'Allowed — turn the switch on to finish subscribing',
+  on: 'On — joins, locked-in dates, and note changes',
 };
 
 export default function Settings() {
@@ -162,8 +162,7 @@ export default function Settings() {
           </div>
           {!space?.partner2Id && (
             <p className={f.rowNote}>
-              One open seat. Share an invite when you’re ready — until then
-              it’s just you.
+              One open seat — share an invite when you’re ready
             </p>
           )}
         </>
@@ -285,8 +284,8 @@ export default function Settings() {
         )}
       </div>
       <p className={f.rowNote}>
-        Read-only overlay from one Google calendar. Never becomes a plan. Best
-        from Safari/Chrome the first time you connect.
+        Your calendar only — not shared plans. Best from Safari/Chrome the first
+        time you connect
       </p>
 
       {!googleClientId() && (

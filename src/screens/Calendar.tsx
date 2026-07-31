@@ -43,9 +43,11 @@ export default function Calendar() {
   const openDetail = useApp((st) => st.openDetail);
   const openExternal = useApp((st) => st.openExternal);
   const openComposer = useApp((st) => st.openComposer);
+  const space = useApp((st) => st.space);
 
   const cursorDate = parseISO(cursor);
   const today = todayISO();
+  const other = space?.partnerName ?? null;
 
   /* Plans land on every day they cover, so a trip reads as one run of
      days rather than a mark on the day you leave. */
@@ -190,7 +192,15 @@ export default function Calendar() {
 
         {!dayPlans.length ? (
           <div className={s.blank}>
-            <p>Nothing planned for this day.</p>
+            <p>
+              {other
+                ? picked === today
+                  ? `Nothing planned between you and ${other} today`
+                  : `Nothing planned between you and ${other} this day`
+                : picked === today
+                  ? 'Nothing planned today'
+                  : 'Nothing planned this day'}
+            </p>
             <button type="button" onClick={() => openComposer('plan')}>
               Plan something
             </button>
