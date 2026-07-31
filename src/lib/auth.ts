@@ -24,6 +24,7 @@ export interface InvitePeek {
 type Client = Awaited<ReturnType<typeof makeClient>>;
 
 let client: Client | null = null;
+let clientKey = '';
 
 async function makeClient(url: string, key: string) {
   const { createClient } = await import('@supabase/supabase-js');
@@ -42,7 +43,11 @@ export function authConfigured(c: Config = loadConfig()): boolean {
 
 export async function getClient(c: Config = loadConfig()): Promise<Client | null> {
   if (!authConfigured(c)) return null;
-  if (!client) client = await makeClient(c.supabaseUrl, c.supabaseKey);
+  const nextKey = `${c.supabaseUrl}\0${c.supabaseKey}`;
+  if (!client || clientKey !== nextKey) {
+    client = await makeClient(c.supabaseUrl, c.supabaseKey);
+    clientKey = nextKey;
+  }
   return client;
 }
 

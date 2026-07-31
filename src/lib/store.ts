@@ -227,12 +227,15 @@ export const useApp = create<AppState>()((set, get) => {
     },
 
     async disconnect() {
-      const config = { ...get().config, supabaseUrl: '', supabaseKey: '', spaceId: '' };
+      // Keep project URL/key (build-time defaults); only drop the space binding.
+      const config = { ...get().config, spaceId: '' };
       set({ config, space: null });
       saveConfig(config);
-      set({ authPhase: 'local' });
-      await start(new LocalBackend());
-      get().toast('Back to this device only');
+      set({ authPhase: 'signedOut' });
+      backend?.dispose();
+      backend = null;
+      set({ ready: true, backendName: 'local', live: false, liveLabel: 'Signed out' });
+      get().toast('Signed out');
     },
 
     async create(input) {
