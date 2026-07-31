@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useDragControls } from 'motion/react';
 import { useEffect, type ReactNode } from 'react';
 import s from './Sheet.module.css';
 
@@ -20,6 +20,8 @@ export default function Sheet({
   stacked,
   children,
 }: Props) {
+  const dragControls = useDragControls();
+
   // A sheet that leaves the page scrollable behind it feels like a web
   // page, not an app.
   useEffect(() => {
@@ -59,6 +61,8 @@ export default function Sheet({
                animation library rather than as the system. */
             transition={{ type: 'spring', stiffness: 320, damping: 34, mass: 0.9 }}
             drag="y"
+            dragControls={dragControls}
+            dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={(_, info) => {
@@ -66,7 +70,15 @@ export default function Sheet({
               if (info.offset.y > 140 || info.velocity.y > 700) onClose();
             }}
           >
-            <div className={s.grip} />
+            {/* Only the grabber starts a dismiss drag — scrolling the
+                form (icon grids, notes) must not close the sheet. */}
+            <div
+              className={s.gripHit}
+              onPointerDown={(e) => dragControls.start(e)}
+              aria-hidden
+            >
+              <div className={s.grip} />
+            </div>
             <div className={s.scroller}>
               {eyebrow && <div className={s.eyebrow}>{eyebrow}</div>}
               {heading && <h3 className={s.heading}>{heading}</h3>}

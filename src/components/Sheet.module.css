@@ -44,15 +44,30 @@
   display: none;
 }
 
-/* The grabber is the affordance that says "this drags". Without it a
+/* Wide hit target; the visible pill sits inside. Without a grabber a
    sheet reads as a modal you have to find a button to close. */
+.gripHit {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 28px;
+  margin: 0 0 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.gripHit:active {
+  cursor: grabbing;
+}
+
 .grip {
   width: 36px;
   height: 5px;
   border-radius: 3px;
   background: var(--fill-secondary);
-  margin: 5px auto 14px;
-  flex: 0 0 auto;
 }
 
 .eyebrow {
