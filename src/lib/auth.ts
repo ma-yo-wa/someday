@@ -157,9 +157,10 @@ export async function loadSpace(): Promise<SpaceInfo | null> {
   const metaName = metaDisplayName(sess.session?.user?.user_metadata);
   const nameOf = (id: string | null) => {
     const fromProfile = profiles?.find((p) => p.id === id)?.display_name?.trim();
-    if (fromProfile) return fromProfile;
-    // Own row missing/blank — Auth metadata is a fallback (dashboard edits land here).
+    // "Me"/"You" are app placeholders, not real names — prefer Auth metadata.
+    if (fromProfile && !isPlaceholderName(fromProfile)) return fromProfile;
     if (id === uid && metaName) return metaName;
+    if (fromProfile) return fromProfile;
     return null;
   };
 
@@ -167,13 +168,11 @@ export async function loadSpace(): Promise<SpaceInfo | null> {
   let myName = nameOf(uid) ?? 'Me';
   const partnerName = nameOf(partnerId);
 
-  // Heal profiles when Auth has a name but the row the app reads does not.
-  if (metaName && nameOf(uid) === metaName) {
-    const row = profiles?.find((p) => p.id === uid)?.display_name?.trim();
-    if (!row) {
-      await sb.from('profiles').update({ display_name: metaName }).eq('id', uid);
-      myName = metaName;
-    }
+  // Write Alice (etc.) into profiles when Auth has it but the row still says Me.
+  const rowName = profiles?.find((p) => p.id === uid)?.display_name?.trim() ?? '';
+  if (metaName && (isPlaceholderName(rowName) || !rowName)) {
+    await sb.from('profiles').update({ display_name: metaName }).eq('id', uid);
+    myName = metaName;
   }
 
   // Keep the local config in step so the rest of the app keeps working.
@@ -229,9 +228,14 @@ function metaDisplayName(meta: Record<string, unknown> | undefined): string | nu
   if (!meta) return null;
   for (const key of ['display_name', 'full_name', 'name'] as const) {
     const v = meta[key];
-    if (typeof v === 'string' && v.trim()) return v.trim();
+    if (typeof v === 'string' && v.trim() && !isPlaceholderName(v)) return v.trim();
   }
   return null;
+}
+
+function isPlaceholderName(name: string): boolean {
+  const n = name.trim().toLowerCase();
+  return !n || n === 'me' || n === 'you';
 }
 
 /** supabase-js still returns plain { message, … } objects, not Error. */
