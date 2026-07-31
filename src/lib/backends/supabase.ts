@@ -1,6 +1,11 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import type { Backend, BackendHandlers, NewActivity } from '../backend';
-import type { Activity, AuditLog } from '../types';
+import type {
+  Backend,
+  BackendHandlers,
+  ExternalEventInput,
+  NewActivity,
+} from '../backend';
+import type { Activity, AuditLog, ExternalEvent } from '../types';
 import { iso } from '../date';
 import type { Config } from '../config';
 import { getClient } from '../auth';
@@ -97,6 +102,16 @@ export class SupabaseBackend implements Backend {
         },
         () => void this.refreshLogs(),
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'external_events',
+          filter: `space_id=eq.${this.spaceId}`,
+        },
+        () => void this.refreshExternal(),
+      )
       .subscribe((status) => {
         handlers.onLive(status === 'SUBSCRIBED', status === 'SUBSCRIBED' ? 'Live' : 'Connecting');
       });
@@ -184,10 +199,54 @@ export class SupabaseBackend implements Backend {
     await this.refresh();
   }
 
+  async replaceExternal(events: ExternalEventInput[]): Promise<void> {
+    const { data: userData, error: userErr } = await this.client.auth.getUser();
+    if (userErr || !userData.user) {
+      throw new Error('Session expired — sign out and sign back in.');
+    }
+    this.uid = userData.user.id;
+
+    const { error: delErr } = await this.client
+      .from('external_events')
+      .delete()
+      .eq('space_id', this.spaceId)
+      .eq('owner_id', this.uid);
+    if (delErr) {
+      if (/external_events|schema cache/i.test(delErr.message)) {
+        throw new Error(
+          'Calendar sharing isn’t set up yet — run migrations/003_external_events.sql in Supabase',
+        );
+      }
+      throw delErr;
+    }
+
+    if (events.length) {
+      const rows = events.map((e) => ({
+        space_id: this.spaceId,
+        owner_id: this.uid,
+        source_id: e.sourceId,
+        title: e.title,
+        starts_at: toTimestamptz(e.startsAt),
+        ends_at: toTimestamptz(e.endsAt),
+        all_day: e.allDay,
+        calendar_name: e.calendar,
+        updated_at: new Date().toISOString(),
+      }));
+      const { error: insErr } = await this.client.from('external_events').insert(rows);
+      if (insErr) throw insErr;
+    }
+
+    await this.refreshExternal();
+  }
+
   /* ---------------- internals ---------------- */
 
   private async refresh(): Promise<void> {
-    await Promise.all([this.refreshActivities(), this.refreshLogs()]);
+    await Promise.all([
+      this.refreshActivities(),
+      this.refreshLogs(),
+      this.refreshExternal(),
+    ]);
   }
 
   private async fetchActivities(): Promise<Activity[]> {
@@ -215,6 +274,24 @@ export class SupabaseBackend implements Backend {
     this.handlers.onLogs(data as AuditLog[]);
   }
 
+  private async refreshExternal(): Promise<void> {
+    const { data, error } = await this.client
+      .from('external_events')
+      .select('*')
+      .eq('space_id', this.spaceId)
+      .order('starts_at', { ascending: true });
+    if (error) {
+      // Table missing until migration 003 is applied — don’t brick the app.
+      if (/external_events|schema cache/i.test(error.message)) {
+        this.handlers.onExternal([]);
+        return;
+      }
+      console.error(error);
+      return;
+    }
+    this.handlers.onExternal(((data ?? []) as ExternalRow[]).map(mapExternal));
+  }
+
   /** Exposed so settings can show who you're actually signed in as. */
   get userId(): string {
     return this.uid;
@@ -238,5 +315,27 @@ function mapActivity(r: ActivityRow): Activity {
     all_day: r.all_day,
     created_at: r.created_at,
     updated_at: r.updated_at ?? undefined,
+  };
+}
+
+interface ExternalRow {
+  id: string;
+  owner_id: string;
+  title: string | null;
+  starts_at: string;
+  ends_at: string;
+  all_day: boolean;
+  calendar_name: string;
+}
+
+function mapExternal(r: ExternalRow): ExternalEvent {
+  return {
+    id: r.id,
+    ownerId: r.owner_id,
+    title: r.title,
+    startsAt: fromTimestamptz(r.starts_at, r.all_day) ?? r.starts_at,
+    endsAt: fromTimestamptz(r.ends_at, r.all_day) ?? r.ends_at,
+    allDay: r.all_day,
+    calendar: r.calendar_name,
   };
 }

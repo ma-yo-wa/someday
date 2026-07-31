@@ -1,4 +1,4 @@
-import type { Activity, AuditLog } from './types';
+import type { Activity, AuditLog, ExternalEvent } from './types';
 
 export interface NewActivity {
   title: string;
@@ -8,12 +8,23 @@ export interface NewActivity {
   ends_at?: string | null;
 }
 
+/** One imported overlay row, before it has a database id. */
+export interface ExternalEventInput {
+  sourceId: string;
+  title: string | null;
+  startsAt: string;
+  endsAt: string;
+  allDay: boolean;
+  calendar: string;
+}
+
 /** What a backend pushes back up into the store. Both implementations
  *  drive the UI through these same three callbacks, so a local write and
  *  a remote realtime event land on exactly one code path. */
 export interface BackendHandlers {
   onActivities(list: Activity[]): void;
   onLogs(list: AuditLog[]): void;
+  onExternal(list: ExternalEvent[]): void;
   onLive(live: boolean, label: string): void;
 }
 
@@ -23,6 +34,8 @@ export interface Backend {
   create(input: NewActivity): Promise<void>;
   patch(id: string, changes: Partial<Activity>): Promise<void>;
   remove(id: string): Promise<void>;
+  /** Replace this user’s imported calendar overlay for the space. */
+  replaceExternal(events: ExternalEventInput[]): Promise<void>;
   dispose(): void;
 }
 

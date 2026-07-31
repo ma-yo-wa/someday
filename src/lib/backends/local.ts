@@ -1,6 +1,11 @@
-import type { Backend, BackendHandlers, NewActivity } from '../backend';
+import type {
+  Backend,
+  BackendHandlers,
+  ExternalEventInput,
+  NewActivity,
+} from '../backend';
 import { uid } from '../backend';
-import type { Activity, ActionType, AuditLog } from '../types';
+import type { Activity, ActionType, AuditLog, ExternalEvent } from '../types';
 import { addDays, describeDT } from '../date';
 import { loadConfig } from '../config';
 
@@ -9,6 +14,7 @@ const KEY = 'someday.data.v1';
 interface Snapshot {
   activities: Activity[];
   logs: AuditLog[];
+  external: ExternalEvent[];
 }
 
 /* Demo mode is not fake-realtime: it syncs over BroadcastChannel, so two
@@ -21,7 +27,7 @@ export class LocalBackend implements Backend {
   private handlers!: BackendHandlers;
   private channel: BroadcastChannel | null = null;
   private onStorage: ((e: StorageEvent) => void) | null = null;
-  private data: Snapshot = { activities: [], logs: [] };
+  private data: Snapshot = { activities: [], logs: [], external: [] };
 
   async init(handlers: BackendHandlers): Promise<void> {
     this.handlers = handlers;
@@ -130,6 +136,26 @@ export class LocalBackend implements Backend {
     this.commit();
   }
 
+  async replaceExternal(events: ExternalEventInput[]): Promise<void> {
+    const me = String(loadConfig().me);
+    const mine = events.map(
+      (e): ExternalEvent => ({
+        id: `gcal-${e.sourceId}`,
+        ownerId: me,
+        title: e.title,
+        startsAt: e.startsAt,
+        endsAt: e.endsAt,
+        allDay: e.allDay,
+        calendar: e.calendar,
+      }),
+    );
+    this.data.external = [
+      ...this.data.external.filter((e) => e.ownerId !== me),
+      ...mine,
+    ];
+    this.commit();
+  }
+
   /* ---------------- internals ---------------- */
 
   private log(activityId: string, action: ActionType, details: string): void {
@@ -146,11 +172,14 @@ export class LocalBackend implements Backend {
   private read(): void {
     try {
       const raw = localStorage.getItem(KEY);
-      this.data = raw ? (JSON.parse(raw) as Snapshot) : { activities: [], logs: [] };
+      this.data = raw
+        ? (JSON.parse(raw) as Snapshot)
+        : { activities: [], logs: [], external: [] };
       this.data.activities ??= [];
       this.data.logs ??= [];
+      this.data.external ??= [];
     } catch {
-      this.data = { activities: [], logs: [] };
+      this.data = { activities: [], logs: [], external: [] };
     }
   }
 
@@ -167,6 +196,7 @@ export class LocalBackend implements Backend {
   private emit(): void {
     this.handlers.onActivities([...this.data.activities]);
     this.handlers.onLogs([...this.data.logs]);
+    this.handlers.onExternal([...this.data.external]);
   }
 
   private seed(): void {

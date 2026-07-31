@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Activity, AuditLog, ExternalEvent } from './types';
-import type { Backend, NewActivity } from './backend';
+import type { Backend, ExternalEventInput, NewActivity } from './backend';
 import { LocalBackend } from './backends/local';
 import { loadConfig, saveConfig, isSupabaseConfigured, type Config } from './config';
 import {
@@ -88,6 +88,7 @@ interface AppState {
   setInviteCode: (code: string | null) => void;
   updateConfig: (patch: Partial<Config>) => void;
   setExternal: (events: ExternalEvent[]) => void;
+  syncExternal: (events: ExternalEventInput[]) => Promise<void>;
   toast: (text: string) => void;
 }
 
@@ -100,6 +101,7 @@ export const useApp = create<AppState>()((set, get) => {
   const handlers = {
     onActivities: (list: Activity[]) => set({ activities: list }),
     onLogs: (list: AuditLog[]) => set({ logs: list }),
+    onExternal: (list: ExternalEvent[]) => set({ external: list }),
     onLive: (live: boolean, liveLabel: string) => set({ live, liveLabel }),
   };
 
@@ -283,6 +285,11 @@ export const useApp = create<AppState>()((set, get) => {
     },
 
     setExternal: (external) => set({ external }),
+
+    async syncExternal(events) {
+      if (!backend) throw new Error('Not connected');
+      await backend.replaceExternal(events);
+    },
 
     toast: (text) => {
       const id = ++toastSeq;

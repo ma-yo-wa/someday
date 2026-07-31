@@ -46,7 +46,7 @@ export default function Settings() {
   const authPhase = useApp((st) => st.authPhase);
   const backendName = useApp((st) => st.backendName);
   const space = useApp((st) => st.space);
-  const setExternal = useApp((st) => st.setExternal);
+  const syncExternal = useApp((st) => st.syncExternal);
   const setInviteShareOpen = useApp((st) => st.setInviteShareOpen);
   const refreshSpace = useApp((st) => st.refreshSpace);
   const toast = useApp((st) => st.toast);
@@ -87,11 +87,11 @@ export default function Settings() {
       setGcalList(null);
       const owner = space?.myId ?? String(config.me);
       const events = await fetchGoogleEvents(token, owner, cal.id);
-      setExternal(events);
+      await syncExternal(events);
       setGcalOn(true);
       toast(
         events.length
-          ? `${cal.summary} — ${events.length} events`
+          ? `${cal.summary} — ${events.length} events (shared with your partner)`
           : `${cal.summary} — nothing in the next few months`,
       );
     } catch (err) {
@@ -108,7 +108,6 @@ export default function Settings() {
       clearGoogleToken();
       setGcalOn(false);
       setGcalName(null);
-      setExternal([]);
     }
   }
 
@@ -228,9 +227,12 @@ export default function Settings() {
                   saveGoogleCalendar(null);
                   setGcalList(null);
                   setGcalName(null);
-                  setExternal([]);
                   setGcalOn(false);
-                  toast('Google Calendar disconnected');
+                  void syncExternal([])
+                    .then(() => toast('Google Calendar disconnected'))
+                    .catch((err) =>
+                      toast(err instanceof Error ? err.message : 'Couldn’t clear overlay'),
+                    );
                   return;
                 }
                 setGcalBusy(true);
@@ -284,8 +286,8 @@ export default function Settings() {
         )}
       </div>
       <p className={f.rowNote}>
-        Your calendar only — not shared plans. Best from Safari/Chrome the first
-        time you connect
+        Imports into the shared space so your partner can see what you’re up to
+        — still not plans. Best from Safari/Chrome the first time you connect
       </p>
 
       {!googleClientId() && (

@@ -1,4 +1,4 @@
-import type { ExternalEvent } from './types';
+import type { ExternalEventInput } from './backend';
 import { loadConfig } from './config';
 
 declare global {
@@ -181,9 +181,9 @@ export async function listGoogleCalendars(token: string): Promise<GoogleCalendar
    busy-only share later — Google's own events always carry a summary. */
 export async function fetchGoogleEvents(
   token: string,
-  ownerId: string,
+  _ownerId: string,
   calendarId: string,
-): Promise<ExternalEvent[]> {
+): Promise<ExternalEventInput[]> {
   const min = new Date();
   min.setMonth(min.getMonth() - 1);
   const max = new Date();
@@ -227,8 +227,7 @@ export async function fetchGoogleEvents(
       endsAt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }
     return {
-      id: `gcal-${ev.id}`,
-      ownerId,
+      sourceId: ev.id,
       title: ev.summary?.trim() || 'Busy',
       startsAt: toLocal(startRaw, allDay),
       endsAt,

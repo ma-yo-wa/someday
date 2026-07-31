@@ -5,6 +5,16 @@ import { faceColor } from '../lib/tint';
 import { formatRange } from '../lib/date';
 import s from './ExternalDetail.module.css';
 
+function resolveOwner(
+  ownerId: string,
+  me: 0 | 1,
+  myId: string | undefined,
+): 0 | 1 {
+  if (ownerId === '0' || ownerId === '1') return ownerId === '1' ? 1 : 0;
+  if (myId && ownerId === myId) return me;
+  return (1 - me) as 0 | 1;
+}
+
 function LockIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -23,10 +33,15 @@ export default function ExternalDetail() {
   const config = useApp((st) => st.config);
   const openExternal = useApp((st) => st.openExternal);
 
+  const space = useApp((st) => st.space);
   const event = external.find((e) => e.id === externalId) ?? null;
-  const owner = event && event.ownerId === '1' ? 1 : 0;
-  const isMine = owner === config.me;
-  const ownerName = isMine ? 'You' : (config.names[owner] ?? 'Your partner');
+  const owner = event
+    ? resolveOwner(event.ownerId, space?.me ?? config.me, space?.myId)
+    : config.me;
+  const isMine = owner === (space?.me ?? config.me);
+  const ownerName = isMine
+    ? 'You'
+    : (space?.partnerName ?? config.names[owner] ?? 'Your partner');
   const possessive = isMine ? 'your' : `${ownerName}’s`;
 
   return (

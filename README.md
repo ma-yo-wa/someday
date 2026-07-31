@@ -63,6 +63,7 @@ demo mode still works for you both to poke at the UI.
    - `push.sql` (only when you’re ready for notifications)
    - `migrations/002_partner_joined_push.sql` (if `push.sql` was already
      applied earlier — adds the “she joined” ping)
+   - `migrations/003_external_events.sql` (shared Google calendar overlays)
 3. **Authentication → Providers → Email**
    - Enable Email
    - Turn **Confirm email** **off** so sign-up works inside the app (no

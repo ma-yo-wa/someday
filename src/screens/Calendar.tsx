@@ -19,8 +19,6 @@ import s from './Calendar.module.css';
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-const ownerIndex = (ownerId: string): 0 | 1 => (ownerId === '1' ? 1 : 0);
-
 /* What a multi-day event means depends on which day you're standing on:
    it begins today, it ends today, or it simply covers today. */
 function pillWhen(e: ExternalEvent, day: string): string {
@@ -48,6 +46,15 @@ export default function Calendar() {
   const cursorDate = parseISO(cursor);
   const today = todayISO();
   const other = space?.partnerName ?? null;
+
+  const ownerIndex = (ownerId: string): 0 | 1 => {
+    if (ownerId === '0' || ownerId === '1') return ownerId === '1' ? 1 : 0;
+    if (space) {
+      if (ownerId === space.myId) return space.me;
+      return (1 - space.me) as 0 | 1;
+    }
+    return config.me;
+  };
 
   /* Plans land on every day they cover, so a trip reads as one run of
      days rather than a mark on the day you leave. */
