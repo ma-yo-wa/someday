@@ -24,12 +24,19 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GIPHY_API_KEY: ${{ secrets.VITE_GIPHY_API_KEY }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
-        run: npm run build
+        run: |
+          test -n "$VITE_SUPABASE_URL" || { echo "Missing secret VITE_SUPABASE_URL"; exit 1; }
+          test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing secret VITE_SUPABASE_ANON_KEY"; exit 1; }
+          npm run build
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: npm
+          # Use latest Wrangler; project has no wrangler dependency.
+          wranglerVersion: "4.117.0"
           command: deploy
