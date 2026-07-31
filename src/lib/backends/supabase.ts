@@ -316,6 +316,11 @@ export class SupabaseBackend implements Backend {
 
 function mapExternalError(err: { message?: string; code?: string }): Error {
   const msg = err.message ?? 'Calendar sync failed';
+  if (/location/i.test(msg) && /schema cache|could not find|does not exist/i.test(msg)) {
+    return new Error(
+      'Location column missing — run migrations/005_external_event_details.sql in Supabase, then import again',
+    );
+  }
   if (/external_events|schema cache|does not exist/i.test(msg)) {
     return new Error(
       'Calendar sharing isn’t set up yet — run migrations/003_external_events.sql in Supabase',

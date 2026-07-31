@@ -207,6 +207,7 @@ export async function fetchGoogleEvents(
       id: string;
       summary?: string;
       location?: string;
+      description?: string;
       start: { date?: string; dateTime?: string };
       end: { date?: string; dateTime?: string };
     }>;
@@ -232,7 +233,8 @@ export async function fetchGoogleEvents(
       return {
         sourceId: ev.id,
         title: ev.summary?.trim() || 'Busy',
-        location: cleanPlace(ev.location),
+        // Many bookings leave `location` empty and put the address in notes.
+        location: placeFromEvent(ev.location, ev.description),
         startsAt: toLocal(startRaw, allDay),
         endsAt,
         allDay,
@@ -241,7 +243,74 @@ export async function fetchGoogleEvents(
     });
 }
 
-function cleanPlace(raw: string | undefined): string | null {
+function cleanPlace(raw: string | undefined | null): string | null {
   const t = raw?.replace(/\s+/g, ' ').trim();
   return t || null;
+}
+
+function stripHtml(raw: string): string {
+  return raw
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function looksLikeUrl(s: string): boolean {
+  return /^(https?:\/\/|www\.)/i.test(s) || /^[\w.+-]+@[\w.-]+$/i.test(s);
+}
+
+/** Prefer Google’s location field; otherwise mine a short place from notes. */
+function placeFromEvent(
+  location: string | undefined,
+  description: string | undefined,
+): string | null {
+  const direct = cleanPlace(location);
+  if (direct) return direct;
+  if (!description?.trim()) return null;
+
+  const notes = stripHtml(description);
+  if (!notes) return null;
+
+  const labeled = notes.match(
+    /^(?:address|location|where|venue|hotel)\s*[:\-–]\s*(.+)$/im,
+  );
+  if (labeled?.[1]) {
+    const p = cleanPlace(labeled[1].split('\n')[0]);
+    if (p && !looksLikeUrl(p) && p.length <= 180) return p;
+  }
+
+  // maps.google.com/?q=Place+Name
+  const mapQ = notes.match(
+    /(?:maps\.google\.[^/\s]+\/maps\?q=|google\.[^/\s]+\/maps\?q=)([^&\s]+)/i,
+  );
+  if (mapQ?.[1]) {
+    try {
+      const p = cleanPlace(decodeURIComponent(mapQ[1].replace(/\+/g, ' ')));
+      if (p && !looksLikeUrl(p) && p.length <= 180) return p;
+    } catch {
+      /* ignore bad encoding */
+    }
+  }
+
+  for (const line of notes.split(/\n+/)) {
+    const t = line.trim();
+    if (!t || looksLikeUrl(t) || t.length > 180) continue;
+    // Street-style: "12 Main St, City" — skip confirmation codes / "Reservation URL"
+    if (/^(reservation|confirmation|check-?in|check-?out|phone|email)\b/i.test(t)) {
+      continue;
+    }
+    if (/^\d{1,5}\s+\S+/.test(t) && /,/.test(t)) {
+      return cleanPlace(t);
+    }
+  }
+
+  return null;
 }

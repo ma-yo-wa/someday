@@ -65,7 +65,7 @@ export default function Settings() {
     void syncPush().then(() => setBell(pushState()));
   }, [open, space?.myName, config.names, config.me]);
 
-  async function pickGoogleCalendar(cal: GoogleCalendar) {
+  async function importGoogleCalendar(cal: GoogleCalendar) {
     const token = googleToken();
     if (!token) {
       toast('Connect Google again');
@@ -82,9 +82,12 @@ export default function Settings() {
       const events = await fetchGoogleEvents(token, owner, cal.id);
       await syncExternal(events);
       setGcalOn(true);
+      const withPlace = events.filter((e) => e.location).length;
       toast(
         events.length
-          ? `${cal.summary} — ${events.length} events (shared with your partner)`
+          ? withPlace
+            ? `${cal.summary} — ${events.length} events · ${withPlace} with a place`
+            : `${cal.summary} — ${events.length} events (no places on those Google events)`
           : `${cal.summary} — nothing in the next few months`,
       );
     } catch (err) {
@@ -92,6 +95,19 @@ export default function Settings() {
     } finally {
       setGcalBusy(false);
     }
+  }
+
+  async function pickGoogleCalendar(cal: GoogleCalendar) {
+    await importGoogleCalendar(cal);
+  }
+
+  async function refreshGoogleOverlay() {
+    const cal = savedGoogleCalendar();
+    if (!cal) {
+      toast('Choose a calendar first');
+      return;
+    }
+    await importGoogleCalendar(cal);
   }
 
   function closeGcalPicker() {
@@ -230,6 +246,17 @@ export default function Settings() {
           >
             <span className={f.rowLabel}>{gcalName ?? 'Choose calendar'}</span>
             <span className={f.hint}>{gcalName ? 'Change ›' : '›'}</span>
+          </button>
+        )}
+        {gcalOn && gcalName && (
+          <button
+            type="button"
+            className={f.listRow}
+            disabled={gcalBusy}
+            onClick={() => void refreshGoogleOverlay()}
+          >
+            <span className={f.rowLabel}>Refresh overlay</span>
+            <span className={f.hint}>{gcalBusy ? '…' : '›'}</span>
           </button>
         )}
       </div>
