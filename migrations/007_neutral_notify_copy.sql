@@ -1,55 +1,7 @@
 -- =====================================================================
---  002 — notify the waiting partner when the invite seat fills
---
---  Safe to run on a database that already has push.sql applied, and
---  safe to run twice.
+--  007 — drop “Your partner” from push fallbacks (works for friends too)
 -- =====================================================================
 
-create or replace function private.enqueue_push(
-  recipient uuid,
-  space_id  uuid,
-  kind      text,
-  title     text,
-  body      text,
-  activity  uuid default null
-)
-returns void
-language plpgsql
-security definer set search_path = private, net, extensions, public
-as $$
-declare
-  fn_url text := private.cfg('push_fn_url');
-  fn_key text := private.cfg('push_fn_key');
-begin
-  if recipient is null or fn_url is null or fn_key is null then
-    return;
-  end if;
-
-  begin
-    perform net.http_post(
-      url     := fn_url,
-      headers := jsonb_build_object(
-                   'Content-Type',  'application/json',
-                   'Authorization', 'Bearer ' || fn_key
-                 ),
-      body    := jsonb_build_object(
-                   'recipient_id', recipient,
-                   'space_id',     space_id,
-                   'activity_id',  activity,
-                   'kind',         kind,
-                   'title',        title,
-                   'body',         body
-                 ),
-      timeout_milliseconds := 5000
-    );
-  exception
-    when others then
-      raise warning 'enqueue_push failed: %', sqlerrm;
-  end;
-end;
-$$;
-
--- Keep the activity trigger on the shared enqueue path (idempotent).
 create or replace function public.notify_partner()
 returns trigger
 language plpgsql
@@ -135,8 +87,3 @@ begin
   return new;
 end;
 $$;
-
-drop trigger if exists spaces_notify_partner_joined on public.spaces;
-create trigger spaces_notify_partner_joined
-  after update of partner_2_id on public.spaces
-  for each row execute function public.notify_partner_joined();

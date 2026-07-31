@@ -53,7 +53,7 @@ export default function ExternalDetail() {
   const isMine = owner === (space?.me ?? config.me);
   const ownerName = isMine
     ? 'You'
-    : (space?.partnerName ?? config.names[owner] ?? 'Your partner');
+    : (space?.partnerName ?? config.names[owner] ?? 'Them');
   const possessive = isMine ? 'your' : `${ownerName}’s`;
   const initial = (
     (isMine ? space?.myName : space?.partnerName) ??

@@ -157,7 +157,7 @@ export default function Settings() {
             />
           </div>
 
-          <span className={f.label}>Partner</span>
+          <span className={f.label}>Together</span>
           <div className={f.group}>
             {space?.partner2Id && space.partnerName ? (
               <div className={f.listRow}>

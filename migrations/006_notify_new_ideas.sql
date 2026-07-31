@@ -41,7 +41,7 @@ begin
   end if;
 
   select display_name into actor_name from public.profiles where id = actor;
-  actor_name := coalesce(actor_name, 'Your partner');
+  actor_name := coalesce(actor_name, 'Someone');
 
   if kind = 'idea' then
     title := '💡 ' || actor_name || ' added “' || new.title || '” to the bucket';
