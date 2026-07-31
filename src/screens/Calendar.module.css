@@ -104,20 +104,32 @@
   outline-offset: 1px;
 }
 
-/* Glyphs sit above the number the way they do on a wall calendar. */
+/* Glyphs sit above the number the way they do on a wall calendar.
+   Width matches .num so the emoji centers on the same axis as the
+   date — emoji ink is often left-heavy in the font metrics. */
 .glyphs {
   position: absolute;
   top: 1px;
-  left: 0;
-  right: 0;
+  left: 50%;
   z-index: 2;
   display: flex;
   justify-content: center;
-  gap: 1px;
+  align-items: center;
+  gap: 0;
+  width: 30px;
+  height: 14px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.glyphMark {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
   font-size: 13px;
   line-height: 1;
-  height: 14px;
-  overflow: hidden;
 }
 
 .marks {

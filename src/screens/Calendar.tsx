@@ -147,7 +147,11 @@ export default function Calendar() {
               {spanning.length > 0 && <span className={bandClasses.join(' ')} />}
               {glyphs.length > 0 && (
                 <span className={s.glyphs} aria-hidden>
-                  {glyphs.join('')}
+                  {glyphs.map((g, gi) => (
+                    <span key={`${g}-${gi}`} className={s.glyphMark}>
+                      {g}
+                    </span>
+                  ))}
                 </span>
               )}
               <span className={s.num}>{cell.label}</span>

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
 import Sheet from './Sheet';
 import Switch from './Switch';
 import GcalPicker from './GcalPicker';
@@ -40,11 +39,8 @@ export default function Settings() {
   const setOpen = useApp((st) => st.setSettingsOpen);
   const config = useApp((st) => st.config);
   const updateConfig = useApp((st) => st.updateConfig);
-  const connect = useApp((st) => st.connect);
-  const disconnect = useApp((st) => st.disconnect);
   const signOutUser = useApp((st) => st.signOutUser);
   const authPhase = useApp((st) => st.authPhase);
-  const backendName = useApp((st) => st.backendName);
   const space = useApp((st) => st.space);
   const syncExternal = useApp((st) => st.syncExternal);
   const setInviteShareOpen = useApp((st) => st.setInviteShareOpen);
@@ -52,9 +48,6 @@ export default function Settings() {
   const toast = useApp((st) => st.toast);
 
   const signedIn = authPhase === 'signedIn';
-  const [url, setUrl] = useState(config.supabaseUrl);
-  const [key, setKey] = useState(config.supabaseKey);
-  const [spaceId, setSpaceId] = useState(config.spaceId);
   const [myName, setMyName] = useState(space?.myName ?? config.names[config.me]);
   const [gcalOn, setGcalOn] = useState(Boolean(googleToken()));
   const [gcalName, setGcalName] = useState(savedGoogleCalendar()?.summary ?? null);
@@ -114,7 +107,7 @@ export default function Settings() {
   return (
     <>
     <Sheet open={open} onClose={() => setOpen(false)} heading="Settings">
-      {signedIn ? (
+      {signedIn && (
         <>
           <span className={f.label}>Your name</span>
           <div className={f.group}>
@@ -164,51 +157,6 @@ export default function Settings() {
               One open seat — share an invite when you’re ready
             </p>
           )}
-        </>
-      ) : (
-        <>
-          <span className={f.label}>Names</span>
-          <div className={f.group}>
-            <input
-              className={f.input}
-              value={config.names[0]}
-              onChange={(e) =>
-                updateConfig({ names: [e.target.value, config.names[1]] })
-              }
-              placeholder="You"
-            />
-            <input
-              className={f.input}
-              value={config.names[1]}
-              onChange={(e) =>
-                updateConfig({ names: [config.names[0], e.target.value] })
-              }
-              placeholder="Them"
-            />
-          </div>
-
-          <span className={f.label}>Which one are you?</span>
-          <div className={f.segmented}>
-            {([0, 1] as const).map((i) => (
-              <button
-                key={i}
-                type="button"
-                className={`${f.segment} ${config.me === i ? f.segmentOn : ''}`}
-                onClick={() => updateConfig({ me: i })}
-              >
-                {config.me === i && (
-                  <motion.span
-                    layoutId="segment-knob"
-                    className={f.segmentKnob}
-                    transition={{ type: 'spring', stiffness: 520, damping: 38 }}
-                  />
-                )}
-                <span className={f.segmentLabel}>
-                  {config.names[i] || (i === 0 ? 'Me' : 'You')}
-                </span>
-              </button>
-            ))}
-          </div>
         </>
       )}
 
@@ -339,7 +287,7 @@ export default function Settings() {
         {bellBusy ? 'Working…' : PUSH_COPY[bell]}
       </p>
 
-      {signedIn && !config.vapidPublicKey.trim() && (
+      {!config.vapidPublicKey.trim() && (
         <>
           <span className={f.label}>VAPID public key</span>
           <div className={f.group}>
@@ -358,91 +306,15 @@ export default function Settings() {
         </>
       )}
 
-      {!signedIn && (
-        <>
-          <span className={f.label}>VAPID public key</span>
-          <div className={f.group}>
-            <input
-              className={f.input}
-              value={config.vapidPublicKey}
-              onChange={(e) => updateConfig({ vapidPublicKey: e.target.value })}
-              placeholder="BNxxx…"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-          </div>
-
-          <span className={f.label}>
-            Sync{' '}
-            <span className={f.hint}>
-              —{' '}
-              {backendName === 'supabase'
-                ? 'connected, syncing live'
-                : 'this device only'}
-            </span>
-          </span>
-          <div className={f.group}>
-            <input
-              className={f.input}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Project URL"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-            <input
-              className={f.input}
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="Anon public key"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-            <input
-              className={f.input}
-              value={spaceId}
-              onChange={(e) => setSpaceId(e.target.value)}
-              placeholder="Space id (optional if signing in)"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-          </div>
-
-          <div className={f.row}>
-            <button
-              type="button"
-              className={`${f.btn} ${f.ghost}`}
-              onClick={() => void disconnect()}
-            >
-              Disconnect
-            </button>
-            <button
-              type="button"
-              className={`${f.btn} ${f.solid}`}
-              onClick={() =>
-                void connect({ supabaseUrl: url, supabaseKey: key, spaceId })
-              }
-            >
-              Connect
-            </button>
-          </div>
-        </>
-      )}
-
-      {signedIn && (
-        <div className={f.row}>
-          <button
-            type="button"
-            className={`${f.btn} ${f.ghost}`}
-            onClick={() => void signOutUser()}
-          >
-            Sign out
-          </button>
-        </div>
-      )}
+      <div className={f.row}>
+        <button
+          type="button"
+          className={`${f.btn} ${f.ghost}`}
+          onClick={() => void signOutUser()}
+        >
+          Sign out
+        </button>
+      </div>
     </Sheet>
 
     {/* Outside Settings sheet — nested fixed sheets get clipped by the
