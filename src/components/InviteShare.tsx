@@ -32,13 +32,13 @@ export default function InviteShare({ open, code, onClose }: Props) {
 
       const text = idea
         ? `I added “${idea}” to a space for us — join here: ${link}`
-        : `Join me on Someday: ${link}\nOr enter this code: ${code}`;
+        : `Join me on Someday: ${link}`;
 
       if (navigator.share) {
         await navigator.share({ title: 'Someday', text, url: link });
       } else {
         await navigator.clipboard.writeText(text);
-        toast('Invite copied');
+        toast('Invite link copied');
       }
       onClose();
     } catch (err) {
@@ -50,20 +50,11 @@ export default function InviteShare({ open, code, onClose }: Props) {
     }
   }
 
-  async function copyCode() {
-    try {
-      await navigator.clipboard.writeText(code);
-      toast('Code copied');
-    } catch {
-      toast(code);
-    }
-  }
-
   return (
     <Sheet open={open} onClose={onClose} heading="Invite someone">
       <p className={f.rowNote} style={{ marginTop: 8 }}>
-        They get their own login, then land in this space with you. Send a link,
-        or read them the code.
+        They get their own login, then land in this space with you. Send them
+        the invite link.
       </p>
 
       <span className={f.label}>
@@ -78,16 +69,6 @@ export default function InviteShare({ open, code, onClose }: Props) {
           placeholder="Kayak the Grand River"
           enterKeyHint="done"
         />
-      </div>
-
-      <span className={f.label}>Invite code</span>
-      <div className={f.group}>
-        <button type="button" className={f.listRow} onClick={() => void copyCode()}>
-          <span className={f.rowLabel} style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {code}
-          </span>
-          <span className={f.hint}>Tap to copy</span>
-        </button>
       </div>
 
       <div className={f.row}>
