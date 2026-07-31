@@ -12,7 +12,9 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      registerType: 'prompt',
+      // Take over as soon as a new build is fetched — otherwise Safari/PWA
+      // can keep serving a precached Settings page for days.
+      registerType: 'autoUpdate',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
       },

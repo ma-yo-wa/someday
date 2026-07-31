@@ -213,26 +213,28 @@ export async function fetchGoogleEvents(
 
   const label = savedGoogleCalendar()?.summary || 'Google';
 
-  return (body.items ?? []).map((ev) => {
-    const allDay = Boolean(ev.start.date);
-    const startRaw = ev.start.date ?? ev.start.dateTime ?? '';
-    const endRaw = ev.end.date ?? ev.end.dateTime ?? startRaw;
-    // Google all-day ends are exclusive; pull them back one day so the
-    // band covers the nights they actually occupy.
-    let endsAt = toLocal(endRaw, allDay);
-    if (allDay && endsAt > toLocal(startRaw, true)) {
-      const d = new Date(endsAt + 'T12:00:00');
-      d.setDate(d.getDate() - 1);
-      const pad = (n: number) => String(n).padStart(2, '0');
-      endsAt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    }
-    return {
-      sourceId: ev.id,
-      title: ev.summary?.trim() || 'Busy',
-      startsAt: toLocal(startRaw, allDay),
-      endsAt,
-      allDay,
-      calendar: label,
-    };
-  });
+  return (body.items ?? [])
+    .filter((ev) => ev.id && (ev.start?.date || ev.start?.dateTime))
+    .map((ev) => {
+      const allDay = Boolean(ev.start.date);
+      const startRaw = ev.start.date ?? ev.start.dateTime ?? '';
+      const endRaw = ev.end?.date ?? ev.end?.dateTime ?? startRaw;
+      // Google all-day ends are exclusive; pull them back one day so the
+      // band covers the nights they actually occupy.
+      let endsAt = toLocal(endRaw, allDay);
+      if (allDay && endsAt > toLocal(startRaw, true)) {
+        const d = new Date(endsAt + 'T12:00:00');
+        d.setDate(d.getDate() - 1);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        endsAt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+      return {
+        sourceId: ev.id,
+        title: ev.summary?.trim() || 'Busy',
+        startsAt: toLocal(startRaw, allDay),
+        endsAt,
+        allDay,
+        calendar: label,
+      };
+    });
 }

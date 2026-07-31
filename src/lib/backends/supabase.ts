@@ -205,6 +205,9 @@ export class SupabaseBackend implements Backend {
       throw new Error('Session expired — sign out and sign back in.');
     }
     this.uid = userData.user.id;
+    if (!this.spaceId) {
+      throw new Error('No space yet — sign out and sign back in.');
+    }
 
     const { error: delErr } = await this.client
       .from('external_events')
@@ -212,12 +215,7 @@ export class SupabaseBackend implements Backend {
       .eq('space_id', this.spaceId)
       .eq('owner_id', this.uid);
     if (delErr) {
-      if (/external_events|schema cache/i.test(delErr.message)) {
-        throw new Error(
-          'Calendar sharing isn’t set up yet — run migrations/003_external_events.sql in Supabase',
-        );
-      }
-      throw delErr;
+      throw mapExternalError(delErr);
     }
 
     if (events.length) {
@@ -232,8 +230,21 @@ export class SupabaseBackend implements Backend {
         calendar_name: e.calendar,
         updated_at: new Date().toISOString(),
       }));
-      const { error: insErr } = await this.client.from('external_events').insert(rows);
-      if (insErr) throw insErr;
+      // Chunk so one bad row doesn’t hide behind a giant payload failure.
+      const chunk = 80;
+      for (let i = 0; i < rows.length; i += chunk) {
+        const slice = rows.slice(i, i + chunk);
+        const { data, error: insErr } = await this.client
+          .from('external_events')
+          .insert(slice)
+          .select('id');
+        if (insErr) throw mapExternalError(insErr);
+        if (!data?.length) {
+          throw new Error(
+            'Calendar rows didn’t save — check you’re signed in and migration 003 grants are applied',
+          );
+        }
+      }
     }
 
     await this.refreshExternal();
@@ -300,6 +311,24 @@ export class SupabaseBackend implements Backend {
   get configRef(): Config {
     return this.config;
   }
+}
+
+function mapExternalError(err: { message?: string; code?: string }): Error {
+  const msg = err.message ?? 'Calendar sync failed';
+  if (/external_events|schema cache|does not exist/i.test(msg)) {
+    return new Error(
+      'Calendar sharing isn’t set up yet — run migrations/003_external_events.sql in Supabase',
+    );
+  }
+  if (/permission denied|42501/i.test(msg) || err.code === '42501') {
+    return new Error(
+      'No permission to save calendar overlays — re-run migrations/003_external_events.sql (includes grants)',
+    );
+  }
+  if (/foreign key|23503/i.test(msg) || err.code === '23503') {
+    return new Error('Space or profile missing — sign out and sign back in, then import again');
+  }
+  return new Error(msg);
 }
 
 function mapActivity(r: ActivityRow): Activity {

@@ -48,6 +48,10 @@ create policy "owner delete external events" on public.external_events
 
 alter table public.external_events replica identity full;
 
+-- Table Editor / SQL create doesn't always grant API roles.
+grant select, insert, update, delete on public.external_events to authenticated;
+grant select on public.external_events to anon;
+
 do $$
 begin
   alter publication supabase_realtime add table public.external_events;

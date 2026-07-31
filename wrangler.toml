@@ -1,6 +1,7 @@
-# Cloudflare Workers (static assets). Dashboard deploy command stays the
-# default: npx wrangler deploy
-name = "someday"
+# Cloudflare Workers (static assets). Deployed by GitHub Actions on push
+# to main, or locally with: npm run build && npx wrangler deploy
+name = "someday-app"
+account_id = "51cff98c19b84bdb2544f38ecb284fae"
 compatibility_date = "2026-07-30"
 
 [assets]

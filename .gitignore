@@ -7,3 +7,4 @@ dist
 *.log
 .wrangler
 .dev.vars
+supabase/.temp

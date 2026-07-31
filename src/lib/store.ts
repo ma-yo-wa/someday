@@ -133,7 +133,7 @@ export const useApp = create<AppState>()((set, get) => {
     config: loadConfig(),
     space: null,
 
-    screen: 'bucket',
+    screen: 'calendar',
     picked: todayISO(),
     cursor: firstOfMonth(new Date()),
     navScroll: 0,
@@ -288,6 +288,11 @@ export const useApp = create<AppState>()((set, get) => {
 
     async syncExternal(events) {
       if (!backend) throw new Error('Not connected');
+      if (backend.name !== 'supabase') {
+        throw new Error(
+          'Calendar sharing needs a signed-in cloud space — sign out and sign back in, then import again',
+        );
+      }
       await backend.replaceExternal(events);
     },
 
