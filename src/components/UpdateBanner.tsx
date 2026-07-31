@@ -3,18 +3,12 @@ import { registerSW } from 'virtual:pwa-register';
 import { AnimatePresence, motion } from 'motion/react';
 import s from './UpdateBanner.module.css';
 
-/** How often to ask the network if a newer build exists. */
-const CHECK_MS = 60_000;
-
-/** When a new deploy is waiting, offer a one-tap reload into it. */
+/** When a new deploy is waiting after a launch, offer a one-tap reload.
+ *  No background polling — updates are rare; a swipe-away reopen is enough. */
 export default function UpdateBanner() {
   const [apply, setApply] = useState<(() => void) | null>(null);
 
   useEffect(() => {
-    let registration: ServiceWorkerRegistration | undefined;
-    let swUrl = '/sw.js';
-    let timer: ReturnType<typeof setInterval> | undefined;
-
     const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
@@ -22,38 +16,7 @@ export default function UpdateBanner() {
           void updateSW(true);
         });
       },
-      onRegisteredSW(url, reg) {
-        swUrl = url;
-        registration = reg;
-        void checkForUpdate();
-        timer = setInterval(() => void checkForUpdate(), CHECK_MS);
-      },
     });
-
-    async function checkForUpdate() {
-      if (!registration || registration.installing || !navigator.onLine) return;
-      try {
-        const resp = await fetch(swUrl, {
-          cache: 'no-store',
-          headers: { 'cache-control': 'no-cache' },
-        });
-        if (resp.ok) await registration.update();
-      } catch {
-        /* offline / flaky — try again next tick */
-      }
-    }
-
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void checkForUpdate();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', onVisible);
-
-    return () => {
-      if (timer) clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('focus', onVisible);
-    };
   }, []);
 
   return (
