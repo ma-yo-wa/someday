@@ -22,11 +22,11 @@ declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-/* skipWaiting + claim so a new worker takes over on the next load rather
-   than waiting for every tab to close. A stale worker sitting there
-   swallowing pushes is a silent failure nobody notices for weeks. */
-self.addEventListener('install', () => {
-  void self.skipWaiting();
+/* Activate on the user’s tap (“Update available”), not mid-scroll.
+   clients.claim() still takes over as soon as that happens so push
+   doesn’t sit on a zombie worker. */
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') void self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

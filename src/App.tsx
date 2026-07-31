@@ -11,6 +11,7 @@ import InviteAccept from './components/InviteAccept';
 import InviteShare from './components/InviteShare';
 import Auth from './components/Auth';
 import Toasts from './components/Toasts';
+import UpdateBanner from './components/UpdateBanner';
 import BucketList from './screens/BucketList';
 import Calendar from './screens/Calendar';
 import { peekInvite, watchPasswordRecovery } from './lib/auth';
@@ -92,6 +93,7 @@ export default function App() {
             }
           }}
         />
+        <UpdateBanner />
         <Toasts />
       </div>
     );
@@ -143,6 +145,7 @@ export default function App() {
         }}
         onDismiss={() => setInviteCode(null)}
       />
+      <UpdateBanner />
       <Toasts />
     </div>
   );

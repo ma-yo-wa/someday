@@ -12,9 +12,8 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      // Take over as soon as a new build is fetched — otherwise Safari/PWA
-      // can keep serving a precached Settings page for days.
-      registerType: 'autoUpdate',
+      // Prompt so we can show “Update available” instead of a surprise reload.
+      registerType: 'prompt',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
       },
