@@ -264,3 +264,26 @@ textarea.input {
   color: #17140f;
   font-weight: 600;
 }
+
+/* Rare deploy fallbacks — keep them out of the main Settings scroll. */
+.advanced {
+  margin-top: 28px;
+  padding: 0 4px;
+}
+
+.advancedSum {
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  font-weight: 600;
+  color: var(--ink-faint);
+  cursor: pointer;
+  list-style: none;
+}
+
+.advancedSum::-webkit-details-marker {
+  display: none;
+}
+
+.advanced[open] .advancedSum {
+  margin-bottom: 4px;
+}

@@ -13,7 +13,7 @@ import Auth from './components/Auth';
 import Toasts from './components/Toasts';
 import BucketList from './screens/BucketList';
 import Calendar from './screens/Calendar';
-import { peekInvite } from './lib/auth';
+import { peekInvite, watchPasswordRecovery } from './lib/auth';
 import { useApp } from './lib/store';
 import s from './App.module.css';
 
@@ -24,11 +24,13 @@ export default function App() {
   const space = useApp((st) => st.space);
   const inviteCode = useApp((st) => st.inviteCode);
   const inviteShareOpen = useApp((st) => st.inviteShareOpen);
+  const passwordRecovery = useApp((st) => st.passwordRecovery);
   const boot = useApp((st) => st.boot);
   const refreshSpace = useApp((st) => st.refreshSpace);
   const setNavScroll = useApp((st) => st.setNavScroll);
   const setInviteShareOpen = useApp((st) => st.setInviteShareOpen);
   const setInviteCode = useApp((st) => st.setInviteCode);
+  const setPasswordRecovery = useApp((st) => st.setPasswordRecovery);
   const main = useRef<HTMLElement>(null);
   const [inviterHint, setInviterHint] = useState<string | null>(null);
   // After Auth unmounts, iOS often delivers the Sign-in tap to whatever is
@@ -38,6 +40,17 @@ export default function App() {
   useEffect(() => {
     void boot();
   }, [boot]);
+
+  useEffect(() => {
+    const href = window.location.href;
+    if (/type=recovery/i.test(href)) setPasswordRecovery(true);
+
+    let off: () => void = () => {};
+    void watchPasswordRecovery(() => setPasswordRecovery(true)).then((unsub) => {
+      off = unsub;
+    });
+    return () => off();
+  }, [setPasswordRecovery]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -62,12 +75,14 @@ export default function App() {
     return <div className={s.app} />;
   }
 
-  if (authPhase === 'signedOut') {
+  if (passwordRecovery || authPhase === 'signedOut') {
     return (
       <div className={s.app}>
         <Auth
-          inviterHint={inviterHint}
+          inviterHint={passwordRecovery ? null : inviterHint}
+          startInRecovery={passwordRecovery}
           onSignedIn={async () => {
+            setPasswordRecovery(false);
             setBlockChrome(true);
             useApp.getState().setSettingsOpen(false);
             try {

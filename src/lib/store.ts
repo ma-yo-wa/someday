@@ -62,11 +62,14 @@ interface AppState {
   settingsOpen: boolean;
   inviteShareOpen: boolean;
   inviteCode: string | null;
+  /** Reset-link session — force the new-password screen before the app. */
+  passwordRecovery: boolean;
   toasts: Toast[];
 
   boot: () => Promise<void>;
   refreshSpace: () => Promise<void>;
   signOutUser: () => Promise<void>;
+  setPasswordRecovery: (v: boolean) => void;
   connect: (next: Partial<Config>) => Promise<void>;
   disconnect: () => Promise<void>;
 
@@ -144,7 +147,10 @@ export const useApp = create<AppState>()((set, get) => {
     settingsOpen: false,
     inviteShareOpen: false,
     inviteCode: pendingInvite(),
+    passwordRecovery: false,
     toasts: [],
+
+    setPasswordRecovery: (passwordRecovery) => set({ passwordRecovery }),
 
     async boot() {
       const config = get().config;

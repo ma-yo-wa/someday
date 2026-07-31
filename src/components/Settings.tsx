@@ -25,14 +25,23 @@ import {
 } from '../lib/push';
 import f from './Form.module.css';
 
-const PUSH_COPY: Record<PushState, string> = {
-  unsupported: "This browser can't do web push",
-  'ios-install': 'Open Someday from the Home Screen icon to turn notifications on',
-  default: 'Hear when she joins, locks in a date, or updates notes',
-  denied: 'Blocked — iPhone Settings → Someday → Notifications',
-  'granted-idle': 'Allowed — turn the switch on to finish subscribing',
-  on: 'On — joins, locked-in dates, and note changes',
-};
+function pushCopy(state: PushState, partnerName: string | null | undefined): string {
+  const who = partnerName?.trim() || 'your person';
+  switch (state) {
+    case 'unsupported':
+      return "This browser can't do web push";
+    case 'ios-install':
+      return 'Open Someday from the Home Screen icon to turn notifications on';
+    case 'denied':
+      return 'Blocked — iPhone Settings → Someday → Notifications';
+    case 'granted-idle':
+      return 'Allowed — turn the switch on to finish subscribing';
+    case 'on':
+      return `On — when ${who} joins, locks in a date, or updates notes`;
+    default:
+      return `Hear when ${who} joins, locks in a date, or updates notes`;
+  }
+}
 
 export default function Settings() {
   const open = useApp((st) => st.settingsOpen);
@@ -266,26 +275,6 @@ export default function Settings() {
         still not plans. Best from Safari/Chrome the first time you connect
       </p>
 
-      {!googleClientId() && (
-        <>
-          <span className={f.label}>Google client ID</span>
-          <div className={f.group}>
-            <input
-              className={f.input}
-              value={config.googleClientId}
-              onChange={(e) => updateConfig({ googleClientId: e.target.value })}
-              placeholder="xxxx.apps.googleusercontent.com"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-          </div>
-          <p className={f.rowNote}>
-            Set VITE_GOOGLE_CLIENT_ID in Cloudflare and redeploy, or paste a Web
-            client ID here once.
-          </p>
-        </>
-      )}
-
       <span className={f.label}>Notifications</span>
       <div className={f.group}>
         <div className={f.listRow}>
@@ -312,26 +301,49 @@ export default function Settings() {
         </div>
       </div>
       <p className={f.rowNote}>
-        {bellBusy ? 'Working…' : PUSH_COPY[bell]}
+        {bellBusy ? 'Working…' : pushCopy(bell, space?.partnerName)}
       </p>
 
-      {!config.vapidPublicKey.trim() && (
-        <>
-          <span className={f.label}>VAPID public key</span>
-          <div className={f.group}>
-            <input
-              className={f.input}
-              value={config.vapidPublicKey}
-              onChange={(e) => updateConfig({ vapidPublicKey: e.target.value })}
-              placeholder="BNxxx…"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-          </div>
-          <p className={f.rowNote}>
-            Needed once — set VITE_VAPID_PUBLIC_KEY in Cloudflare, or paste here.
-          </p>
-        </>
+      {(!googleClientId() || !config.vapidPublicKey.trim()) && (
+        <details className={f.advanced}>
+          <summary className={f.advancedSum}>Advanced</summary>
+          {!googleClientId() && (
+            <>
+              <span className={f.label}>Google client ID</span>
+              <div className={f.group}>
+                <input
+                  className={f.input}
+                  value={config.googleClientId}
+                  onChange={(e) => updateConfig({ googleClientId: e.target.value })}
+                  placeholder="xxxx.apps.googleusercontent.com"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </div>
+              <p className={f.rowNote}>
+                Usually set at deploy — only paste here if Calendar won’t connect
+              </p>
+            </>
+          )}
+          {!config.vapidPublicKey.trim() && (
+            <>
+              <span className={f.label}>VAPID public key</span>
+              <div className={f.group}>
+                <input
+                  className={f.input}
+                  value={config.vapidPublicKey}
+                  onChange={(e) => updateConfig({ vapidPublicKey: e.target.value })}
+                  placeholder="BNxxx…"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </div>
+              <p className={f.rowNote}>
+                Usually set at deploy — only paste here if push won’t subscribe
+              </p>
+            </>
+          )}
+        </details>
       )}
 
       <div className={f.row}>

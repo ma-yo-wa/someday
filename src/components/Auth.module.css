@@ -58,3 +58,16 @@
   padding: 0;
   align-self: flex-start;
 }
+
+.forgot {
+  margin: 10px 0 0;
+  border: none;
+  background: none;
+  color: var(--rose-ink);
+  font: var(--t-footnote);
+  letter-spacing: var(--tr-footnote);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-start;
+}

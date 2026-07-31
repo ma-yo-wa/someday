@@ -32,7 +32,8 @@ async function makeClient(url: string, key: string) {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false,
+      // Needed for password-recovery links (hash/query tokens).
+      detectSessionInUrl: true,
     },
   });
 }
@@ -69,6 +70,43 @@ export async function signInWithPassword(
     password,
   });
   if (error) throw error;
+}
+
+/** Sends a recovery email. Redirect URL must be allow-listed in Supabase Auth. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const sb = await getClient();
+  if (!sb) throw new Error('Supabase isn’t configured');
+  const clean = email.trim().toLowerCase();
+  if (!clean || !clean.includes('@')) {
+    throw new Error('That doesn’t look like an email');
+  }
+  const redirectTo = window.location.origin + window.location.pathname;
+  const { error } = await sb.auth.resetPasswordForEmail(clean, { redirectTo });
+  if (error) throw error;
+}
+
+export async function updatePassword(password: string): Promise<void> {
+  const sb = await getClient();
+  if (!sb) throw new Error('Supabase isn’t configured');
+  if (password.length < 6) {
+    throw new Error('Password needs at least 6 characters');
+  }
+  const { error } = await sb.auth.updateUser({ password });
+  if (error) throw error;
+}
+
+/** Fires when the open session came from a recovery link. */
+export async function watchPasswordRecovery(
+  onRecovery: () => void,
+): Promise<() => void> {
+  const sb = await getClient();
+  if (!sb) return () => {};
+  const { data } = sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') onRecovery();
+  });
+  return () => {
+    data.subscription.unsubscribe();
+  };
 }
 
 export async function signUpWithPassword(

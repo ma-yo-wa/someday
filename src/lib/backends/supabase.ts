@@ -113,7 +113,15 @@ export class SupabaseBackend implements Backend {
         () => void this.refreshExternal(),
       )
       .subscribe((status) => {
-        handlers.onLive(status === 'SUBSCRIBED', status === 'SUBSCRIBED' ? 'Live' : 'Connecting');
+        if (status === 'SUBSCRIBED') {
+          handlers.onLive(true, 'Live');
+          return;
+        }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          handlers.onLive(false, 'Reconnecting…');
+          return;
+        }
+        handlers.onLive(false, 'Connecting…');
       });
   }
 

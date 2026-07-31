@@ -3,7 +3,7 @@ import CoverArt from '../components/CoverArt';
 import { useApp, partnerName } from '../lib/store';
 import { isPlan, type ExternalEvent } from '../lib/types';
 import { artFor } from '../lib/art';
-import { faceColor } from '../lib/tint';
+import { faceColor, faceIndexFor } from '../lib/tint';
 import {
   MONTHS,
   dtDate,
@@ -47,14 +47,8 @@ export default function Calendar() {
   const today = todayISO();
   const other = space?.partnerName ?? null;
 
-  const ownerIndex = (ownerId: string): 0 | 1 => {
-    if (ownerId === '0' || ownerId === '1') return ownerId === '1' ? 1 : 0;
-    if (space) {
-      if (ownerId === space.myId) return space.me;
-      return (1 - space.me) as 0 | 1;
-    }
-    return config.me;
-  };
+  const faceCtx = { me: space?.me ?? config.me, myId: space?.myId };
+  const ownerIndex = (ownerId: string): 0 | 1 => faceIndexFor(ownerId, faceCtx);
 
   /* Plans land on every day they cover, so a trip reads as one run of
      days rather than a mark on the day you leave. */
@@ -246,7 +240,9 @@ export default function Calendar() {
                     <div className={s.meta}>
                       <span
                         className={s.avatar}
-                        style={{ background: faceColor(config.me) }}
+                        style={{
+                          background: faceColor(faceIndexFor(a.created_by, faceCtx)),
+                        }}
                       >
                         {(partnerName(config, a.created_by)[0] ?? '?').toUpperCase()}
                       </span>

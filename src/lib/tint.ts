@@ -61,3 +61,13 @@ export function tintsFor(ids: string[]): string[] {
 export function faceColor(index: 0 | 1): string {
   return index === 0 ? '#4F7735' : '#C4285A';
 }
+
+/** Map a profile id (or local demo "0"/"1") onto seat color 0 | 1. */
+export function faceIndexFor(
+  userId: string,
+  ctx: { me: 0 | 1; myId?: string },
+): 0 | 1 {
+  if (userId === '0' || userId === '1') return userId === '1' ? 1 : 0;
+  if (ctx.myId && userId === ctx.myId) return ctx.me;
+  return (1 - ctx.me) as 0 | 1;
+}

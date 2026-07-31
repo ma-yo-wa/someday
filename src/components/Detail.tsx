@@ -6,7 +6,7 @@ import CoverArt from './CoverArt';
 import { useApp, partnerName } from '../lib/store';
 import { isPlan } from '../lib/types';
 import { artFor } from '../lib/art';
-import { faceColor } from '../lib/tint';
+import { faceColor, faceIndexFor } from '../lib/tint';
 import {
   describePlan,
   dtDate,
@@ -70,8 +70,10 @@ export default function Detail() {
   const toast = useApp((st) => st.toast);
   const setPicked = useApp((st) => st.setPicked);
   const setCursor = useApp((st) => st.setCursor);
+  const space = useApp((st) => st.space);
 
   const item = activities.find((a) => a.id === detailId) ?? null;
+  const faceCtx = { me: space?.me ?? config.me, myId: space?.myId };
 
   const [mode, setMode] = useState<Mode>('view');
   const [title, setTitle] = useState('');
@@ -336,7 +338,7 @@ export default function Detail() {
             <div key={l.id} className={s.entry}>
               <span
                 className={s.who}
-                style={{ background: faceColor(l.user_id === '1' ? 1 : 0) }}
+                style={{ background: faceColor(faceIndexFor(l.user_id, faceCtx)) }}
                 aria-hidden
               >
                 {(partnerName(config, l.user_id)[0] ?? '?').toUpperCase()}

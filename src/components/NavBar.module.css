@@ -179,3 +179,20 @@
 .bulbOn {
   background: var(--rose);
 }
+
+.bulbWait {
+  background: #c9852e;
+}
+
+.liveHint {
+  position: absolute;
+  left: 2px;
+  top: calc(100% + 1px);
+  font: var(--t-caption);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  pointer-events: none;
+}

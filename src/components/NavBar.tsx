@@ -26,6 +26,7 @@ export default function NavBar() {
   const config = useApp((st) => st.config);
   const live = useApp((st) => st.live);
   const liveLabel = useApp((st) => st.liveLabel);
+  const backendName = useApp((st) => st.backendName);
   const navScroll = useApp((st) => st.navScroll);
   const cursor = useApp((st) => st.cursor);
   const setCursor = useApp((st) => st.setCursor);
@@ -102,8 +103,18 @@ export default function NavBar() {
                 </span>
               );
             })}
-            <span className={`${s.bulb} ${live ? s.bulbOn : ''}`} aria-hidden />
+            <span
+              className={`${s.bulb} ${live ? s.bulbOn : ''} ${
+                !live && backendName === 'supabase' ? s.bulbWait : ''
+              }`}
+              aria-hidden
+            />
             <span className="vh">{liveLabel}</span>
+            {!live && backendName === 'supabase' && (
+              <span className={s.liveHint} aria-live="polite">
+                {liveLabel}
+              </span>
+            )}
           </button>
         </div>
 
