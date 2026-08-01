@@ -42,6 +42,28 @@ export function authConfigured(c: Config = loadConfig()): boolean {
   return Boolean(c.supabaseUrl && c.supabaseKey);
 }
 
+/** Shown when the client build has no project URL/key. */
+export const MISSING_BACKEND =
+  'This copy of Someday can’t reach the server. Close the tab and open the link again — if it keeps happening, ask whoever shared it to redeploy.';
+
+/** Turn Auth/API noise into something a person can act on. */
+export function friendlyAuthError(err: unknown): string {
+  if (!(err instanceof Error)) return 'Couldn’t sign in';
+  const msg = err.message.trim();
+  if (/isn.?t configured|is not configured/i.test(msg)) return MISSING_BACKEND;
+  if (/invalid login credentials/i.test(msg)) return 'Wrong email or password';
+  if (/email not confirmed/i.test(msg)) {
+    return 'Confirm your email first, then try again';
+  }
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
+    return 'Couldn’t reach the server — check your connection and try again';
+  }
+  if (/too many requests|rate limit/i.test(msg)) {
+    return 'Too many tries — wait a minute and try again';
+  }
+  return msg || 'Couldn’t sign in';
+}
+
 export async function getClient(c: Config = loadConfig()): Promise<Client | null> {
   if (!authConfigured(c)) return null;
   const nextKey = `${c.supabaseUrl}\0${c.supabaseKey}`;
@@ -64,35 +86,35 @@ export async function signInWithPassword(
   password: string,
 ): Promise<void> {
   const sb = await getClient();
-  if (!sb) throw new Error('Supabase isn’t configured');
+  if (!sb) throw new Error(MISSING_BACKEND);
   const { error } = await sb.auth.signInWithPassword({
     email: email.trim().toLowerCase(),
     password,
   });
-  if (error) throw error;
+  if (error) throw new Error(friendlyAuthError(error));
 }
 
 /** Sends a recovery email. Redirect URL must be allow-listed in Supabase Auth. */
 export async function requestPasswordReset(email: string): Promise<void> {
   const sb = await getClient();
-  if (!sb) throw new Error('Supabase isn’t configured');
+  if (!sb) throw new Error(MISSING_BACKEND);
   const clean = email.trim().toLowerCase();
   if (!clean || !clean.includes('@')) {
     throw new Error('That doesn’t look like an email');
   }
   const redirectTo = `${appOrigin()}/`;
   const { error } = await sb.auth.resetPasswordForEmail(clean, { redirectTo });
-  if (error) throw error;
+  if (error) throw new Error(friendlyAuthError(error));
 }
 
 export async function updatePassword(password: string): Promise<void> {
   const sb = await getClient();
-  if (!sb) throw new Error('Supabase isn’t configured');
+  if (!sb) throw new Error(MISSING_BACKEND);
   if (password.length < 6) {
     throw new Error('Password needs at least 6 characters');
   }
   const { error } = await sb.auth.updateUser({ password });
-  if (error) throw error;
+  if (error) throw new Error(friendlyAuthError(error));
 }
 
 /** Fires when the open session came from a recovery link. */
@@ -115,7 +137,7 @@ export async function signUpWithPassword(
   displayName: string,
 ): Promise<void> {
   const sb = await getClient();
-  if (!sb) throw new Error('Supabase isn’t configured');
+  if (!sb) throw new Error(MISSING_BACKEND);
   const name = displayName.trim();
   if (!name) throw new Error('Add a name — it shows on your avatar');
 
@@ -127,7 +149,7 @@ export async function signUpWithPassword(
       data: { display_name: name },
     },
   });
-  if (error) throw error;
+  if (error) throw new Error(friendlyAuthError(error));
   // With “Confirm email” on, Supabase creates the user but returns no session
   // until they click a link — which breaks the in-app / PWA flow.
   if (!data.session) {
@@ -296,7 +318,7 @@ function throwSb(error: { message?: string; hint?: string; code?: string }): nev
 
 export async function peekInvite(code: string): Promise<InvitePeek | null> {
   const sb = await getClient();
-  if (!sb) throw new Error('Supabase isn’t configured');
+  if (!sb) throw new Error(MISSING_BACKEND);
   const cleaned = code.trim().toLowerCase();
   if (!cleaned) throw new Error('That invite link is missing a code');
   const { data, error } = await sb.rpc('peek_invite', { code: cleaned });
@@ -313,7 +335,7 @@ export async function peekInvite(code: string): Promise<InvitePeek | null> {
 
 export async function joinInvite(code: string, bringItems = false): Promise<void> {
   const sb = await getClient();
-  if (!sb) throw new Error('Supabase isn’t configured');
+  if (!sb) throw new Error(MISSING_BACKEND);
   const cleaned = code.trim().toLowerCase();
   if (!cleaned) throw new Error('That invite link is missing a code');
   const fn = bringItems ? 'join_space_bringing_items' : 'join_space';

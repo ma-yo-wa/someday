@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { useApp } from '../lib/store';
+import { useApp, isMatched } from '../lib/store';
 import { faceColor } from '../lib/tint';
 import { MONTHS, iso, parseISO, todayISO } from '../lib/date';
 import s from './NavBar.module.css';
@@ -36,9 +36,7 @@ export default function NavBar() {
 
   const cursorDate = parseISO(cursor);
   const isCalendar = screen === 'calendar';
-  // Two seats = you + partner. Until they join, the open seat is "+"
-  // (invite) — not a fake "You" avatar from the old demo defaults.
-  const seatEmpty = !!space && !space.partner2Id;
+  const matched = isMatched(space);
   const me = space?.me ?? config.me;
   const labelFor = (i: 0 | 1) => {
     if (space) {
@@ -47,6 +45,8 @@ export default function NavBar() {
     }
     return config.names[i] ?? '';
   };
+  // One face until someone joins — two only when the space is matched.
+  const seats: (0 | 1)[] = matched ? [0, 1] : [me];
 
   const monthLabel = `${MONTHS[cursorDate.getMonth()]}${
     cursorDate.getFullYear() === new Date().getFullYear()
@@ -88,18 +88,15 @@ export default function NavBar() {
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
           >
-            {([0, 1] as const).map((i) => {
-              const empty = seatEmpty && i !== me;
+            {seats.map((i) => {
               const label = labelFor(i);
               return (
                 <span
                   key={i}
-                  className={`${s.face} ${empty ? s.empty : ''} ${
-                    !empty && me !== i ? s.dim : ''
-                  }`}
-                  style={empty ? undefined : { background: faceColor(i) }}
+                  className={`${s.face} ${matched && me !== i ? s.dim : ''}`}
+                  style={{ background: faceColor(i) }}
                 >
-                  {empty ? '+' : (label[0] ?? '?').toUpperCase()}
+                  {(label[0] ?? '?').toUpperCase()}
                 </span>
               );
             })}

@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { useApp, type Screen } from '../lib/store';
+import { useApp, isMatched, type Screen } from '../lib/store';
 import s from './TabBar.module.css';
 
 /* Outlined when idle, solid when selected. Without labels the icon is
@@ -39,6 +39,7 @@ export default function TabBar() {
   const screen = useApp((st) => st.screen);
   const setScreen = useApp((st) => st.setScreen);
   const setAddOpen = useApp((st) => st.setAddOpen);
+  const matched = useApp((st) => isMatched(st.space));
 
   const tab = (id: Screen, label: string, icon: (on: boolean) => React.ReactNode) => {
     const on = screen === id;
@@ -72,19 +73,19 @@ export default function TabBar() {
         {tab('bucket', 'Bucket List', (on) => <BucketIcon on={on} />)}
       </div>
 
-      {/* Out of the bar entirely. It isn't a place you go, it's the thing
-          you came to do, and it's the only control that can't be reached
-          any other way. */}
-      <motion.button
-        type="button"
-        className={s.make}
-        onClick={() => setAddOpen(true)}
-        whileTap={{ scale: 0.9 }}
-        transition={{ type: 'spring', stiffness: 600, damping: 30 }}
-        aria-label="Add something"
-      >
-        <span className={s.plus} aria-hidden />
-      </motion.button>
+      {/* Hidden until the space has two people — create is a shared act. */}
+      {matched && (
+        <motion.button
+          type="button"
+          className={s.make}
+          onClick={() => setAddOpen(true)}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+          aria-label="Add something"
+        >
+          <span className={s.plus} aria-hidden />
+        </motion.button>
+      )}
     </nav>
   );
 }

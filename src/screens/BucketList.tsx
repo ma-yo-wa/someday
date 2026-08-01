@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import CoverArt from '../components/CoverArt';
-import { useApp, partnerName } from '../lib/store';
+import { useApp, partnerName, isMatched } from '../lib/store';
 import { isBucketItem } from '../lib/types';
 import { tintsFor } from '../lib/tint';
 import s from './BucketList.module.css';
@@ -10,6 +10,8 @@ export default function BucketList() {
   const config = useApp((st) => st.config);
   const openDetail = useApp((st) => st.openDetail);
   const openComposer = useApp((st) => st.openComposer);
+  const setInviteShareOpen = useApp((st) => st.setInviteShareOpen);
+  const matched = useApp((st) => isMatched(st.space));
 
   const items = activities
     .filter(isBucketItem)
@@ -22,10 +24,21 @@ export default function BucketList() {
     return (
       <div className={s.board}>
         <div className={s.blank}>
-          <p>Things you both want to do, before they have a date</p>
-          <button type="button" onClick={() => openComposer('bucket')}>
-            Add the first one
-          </button>
+          {matched ? (
+            <>
+              <p>Things you both want to do, before they have a date</p>
+              <button type="button" onClick={() => openComposer('bucket')}>
+                Add the first one
+              </button>
+            </>
+          ) : (
+            <>
+              <p>Invite your person — then fill this list together</p>
+              <button type="button" onClick={() => setInviteShareOpen(true)}>
+                Invite
+              </button>
+            </>
+          )}
         </div>
       </div>
     );

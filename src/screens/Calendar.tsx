@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import CoverArt from '../components/CoverArt';
-import { useApp, partnerName } from '../lib/store';
+import { useApp, partnerName, isMatched } from '../lib/store';
 import { isPlan, type ExternalEvent } from '../lib/types';
 import { artFor } from '../lib/art';
 import { faceColor, faceIndexFor } from '../lib/tint';
@@ -40,11 +40,13 @@ export default function Calendar() {
   const setPicked = useApp((st) => st.setPicked);
   const openDetail = useApp((st) => st.openDetail);
   const openExternal = useApp((st) => st.openExternal);
+  const setInviteShareOpen = useApp((st) => st.setInviteShareOpen);
   const space = useApp((st) => st.space);
 
   const cursorDate = parseISO(cursor);
   const today = todayISO();
-  const other = space?.partnerName ?? null;
+  const matched = isMatched(space);
+  const other = matched ? space?.partnerName ?? null : null;
 
   const faceCtx = { me: space?.me ?? config.me, myId: space?.myId };
   const ownerIndex = (ownerId: string): 0 | 1 => faceIndexFor(ownerId, faceCtx);
@@ -196,15 +198,24 @@ export default function Calendar() {
 
         {!dayPlans.length ? (
           <div className={s.blank}>
-            <p>
-              {other
-                ? picked === today
-                  ? `Nothing planned between you and ${other} today`
-                  : `Nothing planned between you and ${other} this day`
-                : picked === today
-                  ? 'Nothing planned today'
-                  : 'Nothing planned this day'}
-            </p>
+            {matched ? (
+              <p>
+                {other
+                  ? picked === today
+                    ? `Nothing planned between you and ${other} today`
+                    : `Nothing planned between you and ${other} this day`
+                  : picked === today
+                    ? 'Nothing planned today'
+                    : 'Nothing planned this day'}
+              </p>
+            ) : (
+              <>
+                <p>Invite your person — Someday is for the two of you</p>
+                <button type="button" onClick={() => setInviteShareOpen(true)}>
+                  Invite
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>

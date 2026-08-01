@@ -344,15 +344,17 @@ export default function Settings() {
         </details>
       )}
 
-      <div className={f.row}>
-        <button
-          type="button"
-          className={`${f.btn} ${f.ghost}`}
-          onClick={() => void signOutUser()}
-        >
-          Sign out
-        </button>
-      </div>
+      {signedIn && (
+        <div className={f.row}>
+          <button
+            type="button"
+            className={`${f.btn} ${f.ghost}`}
+            onClick={() => void signOutUser()}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
     </Sheet>
 
     {/* Outside Settings sheet — nested fixed sheets get clipped by the

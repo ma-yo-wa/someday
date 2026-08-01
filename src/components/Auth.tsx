@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
+  authConfigured,
+  friendlyAuthError,
+  MISSING_BACKEND,
   requestPasswordReset,
   signInWithPassword,
   signUpWithPassword,
@@ -25,7 +28,9 @@ export default function Auth({ onSignedIn, inviterHint, startInRecovery }: Props
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    authConfigured() ? null : MISSING_BACKEND,
+  );
 
   useEffect(() => {
     if (startInRecovery) {
@@ -36,6 +41,11 @@ export default function Auth({ onSignedIn, inviterHint, startInRecovery }: Props
   }, [startInRecovery]);
 
   async function submit() {
+    if (!authConfigured()) {
+      setError(MISSING_BACKEND);
+      return;
+    }
+
     const clean = email.trim();
     if (mode === 'forgot') {
       setBusy(true);
@@ -44,7 +54,7 @@ export default function Auth({ onSignedIn, inviterHint, startInRecovery }: Props
         await requestPasswordReset(clean);
         setMode('sent');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Couldn’t send reset email');
+        setError(friendlyAuthError(err));
       } finally {
         setBusy(false);
       }
@@ -58,7 +68,7 @@ export default function Auth({ onSignedIn, inviterHint, startInRecovery }: Props
         await updatePassword(password);
         await onSignedIn();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Couldn’t update password');
+        setError(friendlyAuthError(err));
       } finally {
         setBusy(false);
       }
@@ -84,7 +94,7 @@ export default function Auth({ onSignedIn, inviterHint, startInRecovery }: Props
       else await signInWithPassword(clean, password);
       await onSignedIn();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Couldn’t sign in');
+      setError(friendlyAuthError(err));
     } finally {
       setBusy(false);
     }

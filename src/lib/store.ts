@@ -26,6 +26,11 @@ interface Toast {
 
 export type AuthPhase = 'loading' | 'local' | 'signedOut' | 'signedIn';
 
+/** Shared space with both seats filled — create is locked until then. */
+export function isMatched(space: SpaceInfo | null | undefined): boolean {
+  return Boolean(space?.partner2Id);
+}
+
 interface AppState {
   ready: boolean;
   authPhase: AuthPhase;
@@ -156,11 +161,13 @@ export const useApp = create<AppState>()((set, get) => {
       const config = get().config;
 
       // Auth path: project credentials present, space comes from the session.
+      // Never fall through to the offline demo — that leaked Me/You calendars
+      // to strangers when Supabase hiccuped.
       if (authConfigured(config)) {
         try {
           const session = await currentSession();
           if (!session) {
-            set({ authPhase: 'signedOut', ready: true });
+            set({ authPhase: 'signedOut', ready: true, space: null });
             return;
           }
           const space = await ensureSpace();
@@ -174,6 +181,8 @@ export const useApp = create<AppState>()((set, get) => {
           return;
         } catch (err) {
           get().toast(err instanceof Error ? err.message : 'Could not sign in');
+          set({ authPhase: 'signedOut', ready: true, space: null });
+          return;
         }
       }
 
@@ -188,7 +197,28 @@ export const useApp = create<AppState>()((set, get) => {
         }
       }
 
-      set({ authPhase: 'local' });
+      // Production never ships the offline Me/You sandbox — that looked like
+      // a real space, then Sign out left people on a login that can’t work.
+      if (import.meta.env.PROD) {
+        set({ authPhase: 'signedOut', ready: true, space: null });
+        return;
+      }
+
+      // Offline sandbox for local builds without Supabase env.
+      set({
+        authPhase: 'local',
+        space: {
+          id: 'local',
+          name: 'Someday',
+          inviteCode: '',
+          partner1Id: '0',
+          partner2Id: '1',
+          myId: String(config.me),
+          myName: config.names[config.me] || 'Me',
+          partnerName: config.names[1 - config.me] || 'You',
+          me: config.me,
+        },
+      });
       await start(new LocalBackend());
     },
 
@@ -227,8 +257,8 @@ export const useApp = create<AppState>()((set, get) => {
         set({ authPhase: 'local' });
         get().toast('Connected — syncing live');
       } catch (err) {
-        await start(new LocalBackend());
         get().toast(err instanceof Error ? err.message : 'Could not connect');
+        set({ authPhase: 'signedOut', ready: true, space: null });
       }
     },
 
@@ -246,6 +276,9 @@ export const useApp = create<AppState>()((set, get) => {
 
     async create(input) {
       if (!backend) throw new Error('Not connected — try signing out and back in');
+      if (!isMatched(get().space)) {
+        throw new Error('Invite your person before adding plans');
+      }
       await backend.create(input);
     },
 
@@ -278,10 +311,22 @@ export const useApp = create<AppState>()((set, get) => {
     },
     openDetail: (detailId) => set({ detailId }),
     openExternal: (externalId) => set({ externalId }),
-    setAddOpen: (addOpen) => set({ addOpen }),
+    setAddOpen: (addOpen) => {
+      if (addOpen && !isMatched(get().space)) {
+        set({ inviteShareOpen: true, addOpen: false });
+        return;
+      }
+      set({ addOpen });
+    },
     // The menu always closes behind the form, so backing out of the form
     // returns you to the app rather than to the menu you just left.
-    openComposer: (composerMode) => set({ composerMode, addOpen: false }),
+    openComposer: (composerMode) => {
+      if (!isMatched(get().space)) {
+        set({ inviteShareOpen: true, addOpen: false, composerMode: null });
+        return;
+      }
+      set({ composerMode, addOpen: false });
+    },
     closeComposer: () => set({ composerMode: null }),
     setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
     setInviteShareOpen: (inviteShareOpen) => set({ inviteShareOpen }),

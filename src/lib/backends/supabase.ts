@@ -67,7 +67,9 @@ export class SupabaseBackend implements Backend {
 
     const client = await getClient(this.config);
     if (!client) {
-      throw new Error('Supabase isn’t configured');
+      throw new Error(
+        'This copy of Someday can’t reach the server. Close the tab and open the link again.',
+      );
     }
     this.client = client;
 
