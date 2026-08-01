@@ -35,9 +35,6 @@ function BucketIcon({ on }: { on: boolean }) {
   );
 }
 
-/* TEMPORARY — flipped off to demo the update banner. Set back to true. */
-const SHOW_ADD: boolean = false;
-
 export default function TabBar() {
   const screen = useApp((st) => st.screen);
   const setScreen = useApp((st) => st.setScreen);
@@ -77,7 +74,7 @@ export default function TabBar() {
       </div>
 
       {/* Hidden until the space has two people — create is a shared act. */}
-      {SHOW_ADD && matched && (
+      {matched && (
         <motion.button
           type="button"
           className={s.make}
