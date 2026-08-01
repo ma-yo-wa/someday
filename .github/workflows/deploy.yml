@@ -37,6 +37,11 @@ jobs:
             *) echo "Unexpected anon key format"; exit 1 ;;
           esac
           npm run build
+          # Fail loud if Vite didn't bake project credentials into the client.
+          if ! grep -R -q 'supabase\.co' dist/assets/index-*.js; then
+            echo "Built bundle is missing Supabase URL — check VITE_SUPABASE_* secrets"
+            exit 1
+          fi
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3

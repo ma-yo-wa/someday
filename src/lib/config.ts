@@ -13,12 +13,12 @@ export interface Config {
 }
 
 /* Build-time defaults from Vite env. Empty in local demo; filled on
-   Cloudflare Pages so a fresh install can sign in without pasting keys. */
+   Cloudflare so a fresh install can sign in without pasting keys. */
 const FROM_ENV = {
-  supabaseUrl: (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '',
-  supabaseKey: (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '',
-  googleClientId: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? '',
-  vapidPublicKey: (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined) ?? '',
+  supabaseUrl: String(import.meta.env.VITE_SUPABASE_URL ?? ''),
+  supabaseKey: String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''),
+  googleClientId: String(import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''),
+  vapidPublicKey: String(import.meta.env.VITE_VAPID_PUBLIC_KEY ?? ''),
 };
 
 const DEFAULTS: Config = {

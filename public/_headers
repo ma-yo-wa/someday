@@ -1,10 +1,10 @@
 # Always revalidate the shell so Private/Safari don't stick on an old
-# empty-config build after a deploy.
+# empty-config build after a deploy. no-store — edge was still HIT on no-cache.
 /
-  Cache-Control: no-cache
+  Cache-Control: no-store
 
 /index.html
-  Cache-Control: no-cache
+  Cache-Control: no-store
 
 /sw.js
-  Cache-Control: no-cache
+  Cache-Control: no-store

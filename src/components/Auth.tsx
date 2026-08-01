@@ -28,9 +28,7 @@ export default function Auth({ onSignedIn, inviterHint, startInRecovery }: Props
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(
-    authConfigured() ? null : MISSING_BACKEND,
-  );
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (startInRecovery) {
