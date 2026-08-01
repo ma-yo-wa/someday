@@ -26,6 +26,14 @@ const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:hello@example.com
 const SB_URL        = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY        = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+/* The trigger's bearer has to satisfy two checks with one value: the
+   platform gateway, which only accepts a JWT, and the caller check below.
+   On projects issuing sb_secret_… keys those two can't be the same string,
+   so the trigger's key is configured separately. */
+const CALLER_KEYS = new Set(
+  [SB_KEY, Deno.env.get("PUSH_HOOK_KEY")].filter(Boolean) as string[],
+);
+
 /* ------------------------------------------------------------------ */
 /* base64url helpers                                                   */
 /* ------------------------------------------------------------------ */
@@ -211,9 +219,9 @@ Deno.serve(async (req) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  // Only the database trigger (service role) may invoke this.
+  // Only the database trigger may invoke this — the anon key is public.
   const bearer = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (bearer !== SB_KEY) {
+  if (!CALLER_KEYS.has(bearer)) {
     return new Response("Forbidden", { status: 403 });
   }
 
