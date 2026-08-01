@@ -156,15 +156,6 @@
   filter: saturate(0.25) opacity(0.55);
 }
 
-/* The empty seat. Dashed, no fill — visibly waiting for someone. */
-.empty {
-  background: transparent;
-  border: 1.5px dashed var(--ink-faint);
-  color: var(--ink-faint);
-  font-size: 16px;
-  font-weight: 500;
-}
-
 .bulb {
   position: absolute;
   right: 0;
@@ -172,28 +163,6 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--ink-faint);
-  border: 2px solid var(--paper);
-}
-
-.bulbOn {
-  /* Status green — “live” — not the rose accent used for plans/CTAs. */
-  background: #3d8f4a;
-}
-
-.bulbWait {
   background: #c9852e;
-}
-
-.liveHint {
-  position: absolute;
-  left: 2px;
-  top: calc(100% + 1px);
-  font: var(--t-caption);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--ink-soft);
-  white-space: nowrap;
-  pointer-events: none;
+  border: 2px solid var(--paper);
 }
