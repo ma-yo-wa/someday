@@ -73,9 +73,15 @@ export default function Calendar() {
     }
   }
 
+  /* Ordered by when a plan actually began, not by clock time alone: a
+     trip that started yesterday and is still running belongs above the
+     things that start on this day. All-day sorts last within its day. */
+  const startKey = (dateTime: string | null) =>
+    `${dtDate(dateTime) ?? '9999-99-99'} ${dtTime(dateTime) ?? '99'}`;
+
   const dayPlans = (plansByDate.get(picked) ?? [])
     .slice()
-    .sort((a, b) => (dtTime(a.date_time) ?? '99').localeCompare(dtTime(b.date_time) ?? '99'));
+    .sort((a, b) => startKey(a.date_time).localeCompare(startKey(b.date_time)));
   const dayExternal = (extByDate.get(picked) ?? [])
     .slice()
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
