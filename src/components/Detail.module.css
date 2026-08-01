@@ -55,8 +55,6 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: var(--r-card);
-  background-size: cover;
-  background-position: center;
   margin: 14px 0 4px;
 }
 

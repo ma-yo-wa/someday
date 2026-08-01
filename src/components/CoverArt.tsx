@@ -19,11 +19,18 @@ export default function CoverArt({ url, className, size = 'card' }: Props) {
     );
   }
 
+  /* A real <img> rather than a background, so the browser can skip
+     everything below the fold. A long bucket list is otherwise a few
+     hundred simultaneous decodes. The detail sheet's hero is already on
+     screen by the time it renders, so it doesn't wait. */
   return (
-    <div
-      className={`${s.photo} ${s[size]} ${className ?? ''}`}
-      style={{ backgroundImage: `url(${url})` }}
-      aria-hidden
-    />
+    <div className={`${s.photo} ${s[size]} ${className ?? ''}`} aria-hidden>
+      <img
+        src={url}
+        alt=""
+        loading={size === 'hero' ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    </div>
   );
 }
