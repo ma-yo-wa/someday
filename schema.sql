@@ -71,6 +71,13 @@ create table if not exists public.activities (
   date_time   timestamptz,            -- NULL  => Idea (bucket list)
                                       -- SET   => Plan (on the calendar)
   all_day     boolean not null default false,
+  -- Pending when-suggestion (one at a time). Cleared on accept/dismiss/date change.
+  suggested_date_time timestamptz,
+  suggested_ends_at   timestamptz,
+  suggested_all_day   boolean not null default false,
+  suggested_by        uuid references public.profiles(id) on delete set null,
+  suggested_at        timestamptz,
+  suggested_note      text,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -91,7 +98,8 @@ create table if not exists public.audit_logs (
   space_id    uuid not null references public.spaces(id) on delete cascade,
   user_id     uuid references public.profiles(id) on delete set null,
   action_type text not null check (action_type in
-                ('created','scheduled','rescheduled','unscheduled','edited','deleted')),
+                ('created','scheduled','rescheduled','unscheduled','edited','deleted',
+                 'suggested','suggestion_accepted','suggestion_dismissed')),
   details     text,
   timestamp   timestamptz not null default now()
 );

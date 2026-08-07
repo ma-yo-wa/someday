@@ -3,7 +3,7 @@ import { DayPicker } from 'react-day-picker';
 import Sheet from './Sheet';
 import CoverPicker from './CoverPicker';
 import CoverArt from './CoverArt';
-import { useApp, partnerName } from '../lib/store';
+import { useApp, partnerName, isMatched } from '../lib/store';
 import { isPlan } from '../lib/types';
 import { artFor } from '../lib/art';
 import { faceColor, faceIndexFor } from '../lib/tint';
@@ -36,6 +36,18 @@ function CalendarPlusIcon() {
   );
 }
 
+function SuggestIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path
+        d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H12l-4 3v-3H7.5A2.5 2.5 0 0 1 5 13.5v-7Z"
+        strokeLinejoin="round"
+      />
+      <path d="M9 9h6M9 12h3.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function BucketIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -57,7 +69,16 @@ function TrashIcon() {
   );
 }
 
-type Mode = 'view' | 'edit' | 'when' | 'confirmDelete';
+type Mode = 'view' | 'edit' | 'when' | 'suggest' | 'confirmDelete';
+
+function sameWhen(
+  a: string | null,
+  b: string | null,
+  aEnd: string | null,
+  bEnd: string | null,
+): boolean {
+  return a === b && (aEnd ?? null) === (bEnd ?? null);
+}
 
 export default function Detail() {
   const detailId = useApp((st) => st.detailId);
@@ -67,6 +88,9 @@ export default function Detail() {
   const openDetail = useApp((st) => st.openDetail);
   const patch = useApp((st) => st.patch);
   const remove = useApp((st) => st.remove);
+  const suggestWhen = useApp((st) => st.suggestWhen);
+  const acceptSuggestion = useApp((st) => st.acceptSuggestion);
+  const dismissSuggestion = useApp((st) => st.dismissSuggestion);
   const toast = useApp((st) => st.toast);
   const setPicked = useApp((st) => st.setPicked);
   const setCursor = useApp((st) => st.setCursor);
@@ -74,6 +98,7 @@ export default function Detail() {
 
   const item = activities.find((a) => a.id === detailId) ?? null;
   const faceCtx = { me: space?.me ?? config.me, myId: space?.myId };
+  const myId = space?.myId ?? String(config.me);
 
   const [mode, setMode] = useState<Mode>('view');
   const [title, setTitle] = useState('');
@@ -82,6 +107,8 @@ export default function Detail() {
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState('');
   const [end, setEnd] = useState<string | null>(null);
+  const [suggestNote, setSuggestNote] = useState('');
+  const [busy, setBusy] = useState(false);
 
   // Reset every time a different card opens, so nothing leaks between them.
   useEffect(() => {
@@ -93,17 +120,32 @@ export default function Detail() {
     setDate(dtDate(item.date_time) ?? todayISO());
     setTime(dtTime(item.date_time) ?? '');
     setEnd(dtDate(item.ends_at));
+    setSuggestNote('');
+    setBusy(false);
   }, [detailId, item]);
 
   if (!item) return <Sheet open={false} onClose={() => openDetail(null)} children={null} />;
 
   const planned = isPlan(item);
+  const matched = isMatched(space);
+  const pending = Boolean(item.suggested_date_time && item.suggested_by);
+  const minePending = pending && item.suggested_by === myId;
   const history = logs
     .filter((l) => l.activity_id === item.id)
     .slice()
     .sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp));
 
   const close = () => openDetail(null);
+
+  function openSuggest() {
+    const row = item!;
+    const from = row.suggested_date_time ?? row.date_time;
+    setDate(dtDate(from) ?? todayISO());
+    setTime(dtTime(from) ?? '');
+    setEnd(dtDate(row.suggested_ends_at ?? row.ends_at));
+    setSuggestNote('');
+    setMode('suggest');
+  }
 
   async function saveEdits() {
     const clean = title.trim();
@@ -131,11 +173,79 @@ export default function Detail() {
     toast('Moved');
   }
 
+  async function saveSuggest() {
+    const row = item!;
+    const dateTime = time ? `${date}T${time}` : date;
+    const span = end && end > date ? (time ? `${end}T${time}` : end) : null;
+    if (sameWhen(dateTime, row.date_time, span, row.ends_at)) {
+      toast('That’s already the date — change it, or leave a reason in a note');
+      return;
+    }
+    if (
+      row.suggested_date_time &&
+      sameWhen(dateTime, row.suggested_date_time, span, row.suggested_ends_at)
+    ) {
+      toast('That’s already the suggestion');
+      return;
+    }
+    setBusy(true);
+    try {
+      await suggestWhen(row.id, {
+        date_time: dateTime,
+        ends_at: span,
+        note: suggestNote.trim() || null,
+      });
+      setMode('view');
+      toast('Suggested');
+    } catch {
+      /* toast already shown */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onAccept() {
+    const row = item!;
+    setBusy(true);
+    try {
+      const day = dtDate(row.suggested_date_time);
+      await acceptSuggestion(row.id);
+      if (day) {
+        setPicked(day);
+        const d = parseISO(day);
+        setCursor(iso(new Date(d.getFullYear(), d.getMonth(), 1)));
+      }
+      toast('Locked in');
+    } catch {
+      /* toast already shown */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDismiss() {
+    const row = item!;
+    const mine = row.suggested_by === myId;
+    setBusy(true);
+    try {
+      await dismissSuggestion(row.id);
+      toast(mine ? 'Cancelled' : 'Dismissed');
+    } catch {
+      /* toast already shown */
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function toBucket() {
     await patch(item!.id, { date_time: null, ends_at: null });
     toast('Back on the bucket list');
     close();
   }
+
+  const suggestedLabel =
+    item.suggested_date_time &&
+    describePlan(item.suggested_date_time, item.suggested_ends_at);
 
   return (
     <Sheet open={!!detailId} onClose={close}>
@@ -169,6 +279,70 @@ export default function Detail() {
 
       {mode === 'view' && item.description && (
         <p className={`${s.notes} selectable`}>{item.description}</p>
+      )}
+
+      {mode === 'view' && pending && item.suggested_date_time && (
+        <div className={s.suggestCard}>
+          <div className={s.suggestWho}>
+            <span
+              className={s.who}
+              style={{
+                background: faceColor(faceIndexFor(item.suggested_by!, faceCtx)),
+              }}
+              aria-hidden
+            >
+              {(partnerName(config, item.suggested_by!)[0] ?? '?').toUpperCase()}
+            </span>
+            <span>
+              {minePending
+                ? 'You suggested'
+                : `${partnerName(config, item.suggested_by!)} suggests`}{' '}
+              <strong>{suggestedLabel}</strong>
+            </span>
+          </div>
+          {item.suggested_note && (
+            <p className={s.suggestNote}>{item.suggested_note}</p>
+          )}
+          <div className={s.suggestActions}>
+            {minePending ? (
+              <button
+                type="button"
+                className={`${f.btn} ${f.ghost}`}
+                disabled={busy}
+                onClick={() => void onDismiss()}
+              >
+                Cancel
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`${f.btn} ${f.accent}`}
+                  disabled={busy}
+                  onClick={() => void onAccept()}
+                >
+                  Accept
+                </button>
+                <button
+                  type="button"
+                  className={`${f.btn} ${f.ghost}`}
+                  disabled={busy}
+                  onClick={() => void onDismiss()}
+                >
+                  Dismiss
+                </button>
+                <button
+                  type="button"
+                  className={`${f.btn} ${f.ghost}`}
+                  disabled={busy}
+                  onClick={openSuggest}
+                >
+                  Suggest something else
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {mode === 'edit' && (
@@ -218,7 +392,7 @@ export default function Detail() {
         </>
       )}
 
-      {mode === 'when' && (
+      {(mode === 'when' || mode === 'suggest') && (
         <>
           <DayPicker
             className={f.picker}
@@ -259,6 +433,23 @@ export default function Detail() {
             />
           </div>
 
+          {mode === 'suggest' && (
+            <>
+              <span className={f.label}>
+                Why <span className={f.hint}>— optional, but helpful</span>
+              </span>
+              <div className={f.group}>
+                <textarea
+                  className={f.input}
+                  value={suggestNote}
+                  onChange={(e) => setSuggestNote(e.target.value)}
+                  placeholder="I’m free that afternoon…"
+                  rows={2}
+                />
+              </div>
+            </>
+          )}
+
           <div className={f.row}>
             <button
               type="button"
@@ -270,9 +461,10 @@ export default function Detail() {
             <button
               type="button"
               className={`${f.btn} ${f.accent}`}
-              onClick={() => void saveWhen()}
+              disabled={busy}
+              onClick={() => void (mode === 'suggest' ? saveSuggest() : saveWhen())}
             >
-              Save
+              {mode === 'suggest' ? 'Suggest' : 'Save'}
             </button>
           </div>
         </>
@@ -312,6 +504,13 @@ export default function Detail() {
             <CalendarPlusIcon />
             {planned ? 'Change the date' : 'Put it on the calendar'}
           </button>
+
+          {matched && (
+            <button type="button" className={s.action} onClick={openSuggest}>
+              <SuggestIcon />
+              Suggest a date
+            </button>
+          )}
 
           {planned && (
             <button type="button" className={s.action} onClick={() => void toBucket()}>

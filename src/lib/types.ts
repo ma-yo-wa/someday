@@ -16,6 +16,15 @@ export interface Activity {
    *  same day, which is almost everything, so it stays out of the way. */
   ends_at: string | null;
   all_day: boolean;
+  /** Pending when-suggestion from one of you. Cleared on accept/dismiss
+   *  / cancel / a direct date change. One at a time — not a thread. */
+  suggested_date_time: string | null;
+  suggested_ends_at: string | null;
+  suggested_all_day: boolean;
+  suggested_by: string | null;
+  suggested_at: string | null;
+  /** Optional why, travels with the suggestion. */
+  suggested_note: string | null;
   created_at: string;
   updated_at?: string;
 }
@@ -26,7 +35,16 @@ export type ActionType =
   | 'rescheduled'
   | 'unscheduled'
   | 'edited'
-  | 'deleted';
+  | 'deleted'
+  | 'suggested'
+  | 'suggestion_accepted'
+  | 'suggestion_dismissed';
+
+export interface WhenSuggestion {
+  date_time: string;
+  ends_at?: string | null;
+  note?: string | null;
+}
 
 export interface AuditLog {
   id: string;

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Activity, AuditLog, ExternalEvent } from './types';
-import type { Backend, ExternalEventInput, NewActivity } from './backend';
+import type { Backend, ExternalEventInput, NewActivity, WhenSuggestion } from './backend';
 import { LocalBackend } from './backends/local';
 import { loadConfig, saveConfig, isSupabaseConfigured, type Config } from './config';
 import {
@@ -81,6 +81,9 @@ interface AppState {
   create: (input: NewActivity) => Promise<void>;
   patch: (id: string, changes: Partial<Activity>) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  suggestWhen: (id: string, input: WhenSuggestion) => Promise<void>;
+  acceptSuggestion: (id: string) => Promise<void>;
+  dismissSuggestion: (id: string) => Promise<void>;
 
   setScreen: (s: Screen) => void;
   setPicked: (d: string) => void;
@@ -297,6 +300,39 @@ export const useApp = create<AppState>()((set, get) => {
         await backend.remove(id);
       } catch (err) {
         get().toast(err instanceof Error ? err.message : 'Could not delete');
+      }
+    },
+
+    async suggestWhen(id, input) {
+      if (!backend) throw new Error('Not connected — try signing out and back in');
+      if (!isMatched(get().space)) {
+        throw new Error('Invite your person before suggesting a time');
+      }
+      try {
+        await backend.suggestWhen(id, input);
+      } catch (err) {
+        get().toast(err instanceof Error ? err.message : 'Could not suggest');
+        throw err;
+      }
+    },
+
+    async acceptSuggestion(id) {
+      if (!backend) throw new Error('Not connected — try signing out and back in');
+      try {
+        await backend.acceptSuggestion(id);
+      } catch (err) {
+        get().toast(err instanceof Error ? err.message : 'Could not accept');
+        throw err;
+      }
+    },
+
+    async dismissSuggestion(id) {
+      if (!backend) throw new Error('Not connected — try signing out and back in');
+      try {
+        await backend.dismissSuggestion(id);
+      } catch (err) {
+        get().toast(err instanceof Error ? err.message : 'Could not clear suggestion');
+        throw err;
       }
     },
 

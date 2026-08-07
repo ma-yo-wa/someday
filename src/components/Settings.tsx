@@ -37,9 +37,9 @@ function pushCopy(state: PushState, partnerName: string | null | undefined): str
     case 'granted-idle':
       return 'Allowed — turn the switch on to finish subscribing';
     case 'on':
-      return `On — when ${who} adds an idea, locks in a date, or updates notes`;
+      return `On — when ${who} adds an idea, suggests a time, locks in a date, or updates notes`;
     default:
-      return `Hear when ${who} adds an idea, locks in a date, or updates notes`;
+      return `Hear when ${who} adds an idea, suggests a time, locks in a date, or updates notes`;
   }
 }
 

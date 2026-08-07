@@ -5,9 +5,18 @@ import type {
   NewActivity,
 } from '../backend';
 import { uid } from '../backend';
-import type { Activity, ActionType, AuditLog, ExternalEvent } from '../types';
-import { addDays, describeDT } from '../date';
+import type { Activity, ActionType, AuditLog, ExternalEvent, WhenSuggestion } from '../types';
+import { addDays, describeDT, describePlan } from '../date';
 import { loadConfig } from '../config';
+
+function clearSuggestion(a: Activity): void {
+  a.suggested_date_time = null;
+  a.suggested_ends_at = null;
+  a.suggested_all_day = false;
+  a.suggested_by = null;
+  a.suggested_at = null;
+  a.suggested_note = null;
+}
 
 const KEY = 'someday.data.v1';
 
@@ -69,6 +78,12 @@ export class LocalBackend implements Backend {
       date_time: input.date_time ?? null,
       ends_at: input.ends_at ?? null,
       all_day: !input.date_time || input.date_time.length <= 10,
+      suggested_date_time: null,
+      suggested_ends_at: null,
+      suggested_all_day: false,
+      suggested_by: null,
+      suggested_at: null,
+      suggested_note: null,
       created_by: String(loadConfig().me),
       created_at: new Date().toISOString(),
     };
@@ -125,7 +140,60 @@ export class LocalBackend implements Backend {
       a.all_day = !a.date_time || a.date_time.length <= 10;
       // Going back to the bucket list takes the end date with it.
       if (!a.date_time) a.ends_at = null;
+      clearSuggestion(a);
     }
+    this.commit();
+  }
+
+  async suggestWhen(id: string, input: WhenSuggestion): Promise<void> {
+    const a = this.data.activities.find((x) => x.id === id);
+    if (!a) return;
+    const me = String(loadConfig().me);
+    a.suggested_date_time = input.date_time;
+    a.suggested_ends_at = input.ends_at ?? null;
+    a.suggested_all_day = !input.date_time || input.date_time.length <= 10;
+    a.suggested_by = me;
+    a.suggested_at = new Date().toISOString();
+    a.suggested_note = input.note?.trim() || null;
+    a.updated_at = a.suggested_at;
+    this.log(
+      id,
+      'suggested',
+      `suggested ${describePlan(input.date_time, input.ends_at ?? null)}`,
+    );
+    this.commit();
+  }
+
+  async acceptSuggestion(id: string): Promise<void> {
+    const a = this.data.activities.find((x) => x.id === id);
+    if (!a?.suggested_date_time) {
+      throw new Error('That suggestion is gone — ask them to send it again');
+    }
+    const before = a.date_time;
+    a.date_time = a.suggested_date_time;
+    a.ends_at = a.suggested_ends_at;
+    a.all_day = a.suggested_all_day;
+    clearSuggestion(a);
+    a.updated_at = new Date().toISOString();
+    if (!before) {
+      this.log(id, 'scheduled', `set it for ${describeDT(a.date_time)}`);
+    }
+    this.log(id, 'suggestion_accepted', 'accepted the suggested time');
+    this.commit();
+  }
+
+  async dismissSuggestion(id: string): Promise<void> {
+    const a = this.data.activities.find((x) => x.id === id);
+    if (!a?.suggested_date_time) return;
+    const me = String(loadConfig().me);
+    const mine = a.suggested_by === me;
+    clearSuggestion(a);
+    a.updated_at = new Date().toISOString();
+    this.log(
+      id,
+      'suggestion_dismissed',
+      mine ? 'cancelled the suggestion' : 'dismissed the suggestion',
+    );
     this.commit();
   }
 
@@ -179,6 +247,15 @@ export class LocalBackend implements Backend {
       this.data.activities ??= [];
       this.data.logs ??= [];
       this.data.external ??= [];
+      // Older demo snapshots predate suggestions.
+      for (const a of this.data.activities) {
+        a.suggested_date_time ??= null;
+        a.suggested_ends_at ??= null;
+        a.suggested_all_day ??= false;
+        a.suggested_by ??= null;
+        a.suggested_at ??= null;
+        a.suggested_note ??= null;
+      }
     } catch {
       this.data = { activities: [], logs: [], external: [] };
     }
@@ -217,6 +294,12 @@ export class LocalBackend implements Backend {
       date_time,
       ends_at,
       all_day: !date_time || date_time.length <= 10,
+      suggested_date_time: null,
+      suggested_ends_at: null,
+      suggested_all_day: false,
+      suggested_by: null,
+      suggested_at: null,
+      suggested_note: null,
       created_by: String(by),
       created_at: new Date(now - minutesAgo * 60000).toISOString(),
     });

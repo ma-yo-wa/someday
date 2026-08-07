@@ -5,7 +5,7 @@ import type {
   ExternalEventInput,
   NewActivity,
 } from '../backend';
-import type { Activity, AuditLog, ExternalEvent } from '../types';
+import type { Activity, AuditLog, ExternalEvent, WhenSuggestion } from '../types';
 import { iso } from '../date';
 import type { Config } from '../config';
 import { getClient } from '../auth';
@@ -38,9 +38,24 @@ interface ActivityRow {
   date_time: string | null;
   ends_at?: string | null;
   all_day: boolean;
+  suggested_date_time?: string | null;
+  suggested_ends_at?: string | null;
+  suggested_all_day?: boolean | null;
+  suggested_by?: string | null;
+  suggested_at?: string | null;
+  suggested_note?: string | null;
   created_at: string;
   updated_at: string | null;
 }
+
+const CLEAR_SUGGESTION = {
+  suggested_date_time: null,
+  suggested_ends_at: null,
+  suggested_all_day: false,
+  suggested_by: null,
+  suggested_at: null,
+  suggested_note: null,
+} as const;
 
 /* Writes are not optimistic: the row must land in Postgres first. We still
    refresh the list ourselves after each write so the UI doesn't depend on
@@ -194,11 +209,67 @@ export class SupabaseBackend implements Backend {
       patch.all_day = !changes.date_time || changes.date_time.length <= 10;
       // Unscheduling drops the end date too; a bucket-list item has no span.
       if (!changes.date_time) patch.ends_at = null;
+      // A direct date change supersedes any pending suggestion.
+      Object.assign(patch, CLEAR_SUGGESTION);
     }
     if ('ends_at' in changes) {
       patch.ends_at = changes.ends_at ? toTimestamptz(changes.ends_at) : null;
     }
     const { error } = await this.client.from('activities').update(patch).eq('id', id);
+    if (error) throw error;
+    await this.refresh();
+  }
+
+  async suggestWhen(id: string, input: WhenSuggestion): Promise<void> {
+    const { data: userData, error: userErr } = await this.client.auth.getUser();
+    if (userErr || !userData.user) {
+      throw new Error('Session expired — sign out and sign back in.');
+    }
+    this.uid = userData.user.id;
+    const allDay = !input.date_time || input.date_time.length <= 10;
+    const { error } = await this.client
+      .from('activities')
+      .update({
+        suggested_date_time: toTimestamptz(input.date_time),
+        suggested_ends_at: input.ends_at ? toTimestamptz(input.ends_at) : null,
+        suggested_all_day: allDay,
+        suggested_by: this.uid,
+        suggested_at: new Date().toISOString(),
+        suggested_note: input.note?.trim() || null,
+      })
+      .eq('id', id);
+    if (error) throw error;
+    await this.refresh();
+  }
+
+  async acceptSuggestion(id: string): Promise<void> {
+    const { data, error: readErr } = await this.client
+      .from('activities')
+      .select('suggested_date_time, suggested_ends_at, suggested_all_day')
+      .eq('id', id)
+      .single();
+    if (readErr) throw readErr;
+    if (!data?.suggested_date_time) {
+      throw new Error('That suggestion is gone — ask them to send it again');
+    }
+    const { error } = await this.client
+      .from('activities')
+      .update({
+        date_time: data.suggested_date_time,
+        ends_at: data.suggested_ends_at,
+        all_day: Boolean(data.suggested_all_day),
+        ...CLEAR_SUGGESTION,
+      })
+      .eq('id', id);
+    if (error) throw error;
+    await this.refresh();
+  }
+
+  async dismissSuggestion(id: string): Promise<void> {
+    const { error } = await this.client
+      .from('activities')
+      .update(CLEAR_SUGGESTION)
+      .eq('id', id);
     if (error) throw error;
     await this.refresh();
   }
@@ -366,6 +437,7 @@ function mapExternalError(err: { message?: string; code?: string }): Error {
 }
 
 function mapActivity(r: ActivityRow): Activity {
+  const suggestedAllDay = Boolean(r.suggested_all_day);
   return {
     id: r.id,
     space_id: r.space_id,
@@ -376,6 +448,12 @@ function mapActivity(r: ActivityRow): Activity {
     date_time: fromTimestamptz(r.date_time, r.all_day),
     ends_at: fromTimestamptz(r.ends_at ?? null, r.all_day),
     all_day: r.all_day,
+    suggested_date_time: fromTimestamptz(r.suggested_date_time ?? null, suggestedAllDay),
+    suggested_ends_at: fromTimestamptz(r.suggested_ends_at ?? null, suggestedAllDay),
+    suggested_all_day: suggestedAllDay,
+    suggested_by: r.suggested_by ?? null,
+    suggested_at: r.suggested_at ?? null,
+    suggested_note: r.suggested_note ?? null,
     created_at: r.created_at,
     updated_at: r.updated_at ?? undefined,
   };

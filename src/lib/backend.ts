@@ -1,4 +1,4 @@
-import type { Activity, AuditLog, ExternalEvent } from './types';
+import type { Activity, AuditLog, ExternalEvent, WhenSuggestion } from './types';
 
 export interface NewActivity {
   title: string;
@@ -7,6 +7,8 @@ export interface NewActivity {
   date_time?: string | null;
   ends_at?: string | null;
 }
+
+export type { WhenSuggestion };
 
 /** One imported overlay row, before it has a database id. */
 export interface ExternalEventInput {
@@ -35,6 +37,12 @@ export interface Backend {
   create(input: NewActivity): Promise<void>;
   patch(id: string, changes: Partial<Activity>): Promise<void>;
   remove(id: string): Promise<void>;
+  /** Propose a when without locking the calendar. Replaces any pending one. */
+  suggestWhen(id: string, input: WhenSuggestion): Promise<void>;
+  /** Lock in the pending suggestion. */
+  acceptSuggestion(id: string): Promise<void>;
+  /** Clear the pending suggestion (dismiss or cancel). */
+  dismissSuggestion(id: string): Promise<void>;
   /** Replace this user’s imported calendar overlay for the space. */
   replaceExternal(events: ExternalEventInput[]): Promise<void>;
   dispose(): void;
